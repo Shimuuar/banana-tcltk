@@ -7,9 +7,11 @@ module UI.TclTk (
   , frame
   , button
   , label
+  , textarea
     -- ** Tk commands
   , pack
   , configure
+  , disable
   , actimateTcl
   ) where
 
@@ -72,6 +74,10 @@ button opts packs (Cmd pref action)
     command = unwords $ pref : encode action
 
 
+-- | Tk text area
+textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilder p m TkName
+textarea opts packs
+  = widget "tk::text" opts packs []
 
 ----------------------------------------------------------------
 -- Tk commands
@@ -91,6 +97,13 @@ pack nm packs = do
 configure :: Monad m => TkName -> Option p -> TclBuilder p m ()
 configure nm opt
   = tellStmt $ Stmt $ WName nm : Name "configure" : renderOption opt
+
+disable :: Monad m => TkName -> Bool -> TclBuilder p m ()
+disable nm flag
+  = tellStmt $ Stmt [ WName nm
+                    , Name "state"
+                    , Name $ if flag then "disabled" else "!disabled"
+                    ]
 
 actimateTcl :: Source 
             -> Event t p 
