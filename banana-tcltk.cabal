@@ -1,0 +1,36 @@
+Name:           banana-tcltk
+Version:        0.1
+Synopsis:       FRP fr Tcl/Tk
+Description:
+  FRP fr Tcl/Tk
+
+Cabal-Version:  >= 1.6
+License:        BSD3
+License-File:   LICENSE
+Author:         Aleksey Khudyakov <alexey.skladnoy@gmail.com>
+Maintainer:     Aleksey Khudyakov <alexey.skladnoy@gmail.com>
+Homepage:       http://bitbucket.org/Shimuuar/banana-tcltk
+Category:       Data
+Build-Type:     Simple
+
+source-repository head
+  type:     hg
+  location: http://bitbucket.org/Shimuuar/banana-tcltk
+
+
+Library
+  Ghc-options:          -Wall -fno-warn-unused-do-bind
+  Build-Depends:
+    base            >=3 && <5,
+    containers,
+    process,
+    reactive-banana == 0.6.*,
+    mtl             >= 2,
+    transformers    >= 0.2.2
+  Exposed-modules:
+    UI.TclTk
+    UI.TclTk.AST
+    UI.TclTk.Builder
+    UI.Widget.List
+    UI.Reactive
+    Reactive.Banana.Extra
