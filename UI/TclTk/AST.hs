@@ -15,10 +15,12 @@ module UI.TclTk.AST (
   , renderOption
   ) where
 
+import Control.Reactive.Cofunctor
+
 -- | Single Tcl statement/expression
 data Tcl a
   = Stmt [Expr a]               -- ^ Single statement
-  | Lam  (a -> Tcl a)
+  | Lam  (a -> [Tcl a])
 
 -- | Tcl expression
 data Expr a
@@ -64,6 +66,23 @@ data PackFill
   | FillY
   | FillBoth
 
+instance Cofunctor Tcl where
+  cofmap f (Stmt es) = Stmt $ map (cofmap f) es
+  cofmap f (Lam  l ) = Lam  $ map (cofmap f) . l . f
+
+instance Cofunctor Expr where
+  cofmap _ (Name    s) = Name   s
+  cofmap _ (WName   s) = WName  s
+  cofmap _ (SubVar  s) = SubVar s
+  cofmap f (Eval    e) = Eval    $ map (cofmap f) e
+  cofmap f (Braces  e) = Braces  $ map (cofmap f) e
+  cofmap f (BracesS s) = BracesS $ map (cofmap f) s
+  cofmap _ (LitStr  s) = LitStr  s
+  cofmap _ (LitInt  i) = LitInt  i
+  cofmap _ (LitReal x) = LitReal x
+  cofmap f (LamE lam)  = LamE $ cofmap f . lam . f
+  cofmap f (SeqE es )  = SeqE $ map (cofmap f) es
+  
 ----------------------------------------------------------------
 -- 
 ----------------------------------------------------------------
@@ -103,7 +122,7 @@ renderTclParam tcl x = workerTcl 0 x tcl
 -- | Render Tcl code to strings
 workerTcl :: Int -> a -> Tcl a -> [String]
 workerTcl n x (Stmt es) = [pref n ++ unwords (map (renderExpr n x) es)]
-workerTcl n x (Lam lam) = workerTcl n x (lam x)
+workerTcl n x (Lam lam) = workerTcl n x =<< lam x
 
 
 renderExpr :: Int -> a -> Expr a -> String
