@@ -3,6 +3,7 @@ module UI.TclTk.AST (
     Tcl(..)
   , Expr(..)
   , TkName(..)
+  , castFrom_
     -- ** Extra types
   , Option(..)
   , Pack(..)
@@ -16,6 +17,9 @@ module UI.TclTk.AST (
   ) where
 
 import Control.Reactive.Cofunctor
+import Data.String
+
+
 
 -- | Single Tcl statement/expression
 data Tcl a
@@ -83,6 +87,12 @@ instance Cofunctor Expr where
   cofmap f (LamE lam)  = LamE $ cofmap f . lam . f
   cofmap f (SeqE es )  = SeqE $ map (cofmap f) es
   
+instance IsString (Expr a) where
+  fromString = LitStr
+
+castFrom_ :: Cofunctor f => f () -> f b
+castFrom_ = cofmap (const ())
+
 ----------------------------------------------------------------
 -- 
 ----------------------------------------------------------------
