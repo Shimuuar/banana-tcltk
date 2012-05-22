@@ -20,6 +20,7 @@ import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
+import Control.Monad.IO.Class
 
 import UI.TclTk.AST
 
@@ -41,6 +42,9 @@ newtype TclBuilder p m a
 
 instance MonadTrans (TclBuilder p) where
   lift = TclBuilder . lift . lift . lift
+
+instance MonadIO m => MonadIO (TclBuilder p m) where
+  liftIO = TclBuilder . liftIO . liftIO . liftIO
 
 -- | Execute tcl builder
 runTclBuilder :: Monad m => TclBuilder p m () -> m [Tcl p]
