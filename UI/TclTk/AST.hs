@@ -118,7 +118,11 @@ renderExpr n x (BracesS s)
   :  concatMap (workerTcl (n+4) x) s
   ++ [pref n ++ "{"]
 -- Literals
-renderExpr _ _ (LitStr  s) = show s -- FIXME!!!
+renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
+  where
+    escape '"' = "\\\""
+    escape '$' = "\\$"
+    escape  c  = [c]
 renderExpr _ _ (LitInt  i) = show i
 renderExpr _ _ (LitReal x) = show x
 -- Lambda
