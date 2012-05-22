@@ -53,11 +53,15 @@ listEvents xs evt
 
 
 
-startList :: Show a => Source -> [a] -> TclBuilder p (NetworkDescription t) (Event t (Int,a))
+startList :: Show a => Source -> [a] -> Gui t p (Event t (Int,a))
+startList _   [] = return never
 startList src xs = do
   -- Events
-  e <- lift $ addEventSource src
-  let evt = listEvents xs $ tclEvent e
+  e       <- lift $ addEventSource src
+  initEvt <- getParameter
+  let evt = unions [ fmap (const (0, head xs)) initEvt
+                   , listEvents xs $ tclEvent e
+                   ]
   -- UI
   frame [] $
     withPack PackLeft $ do
