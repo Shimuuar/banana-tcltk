@@ -123,7 +123,7 @@ renderExpr _ _ (LitInt  i) = show i
 renderExpr _ _ (LitReal x) = show x
 -- Lambda
 renderExpr n x (LamE lam)  = renderExpr n x (lam x)
-renderExpr n x (SeqE es )  = renderExpr n x =<< es
+renderExpr n x (SeqE es )  = unwords $ map (renderExpr n x) es
 
 pref :: Int -> String
 pref n = replicate n ' '

@@ -71,7 +71,7 @@ startList src xs = do
       button [Text ">>>"] [] $ cmd e (MoveFwd  10)
       button [Text "|>" ] [] $ cmd e  ToEnd
       -- Network
-      actimateTcl src evt $
+      actimateTcl src (fmap fst evt) $
         configure nm (LamOpt $ \i -> Text (show i))
   -- Return data
   return evt
