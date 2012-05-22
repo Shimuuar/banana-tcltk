@@ -59,7 +59,8 @@ startList src xs = do
   -- Events
   e       <- lift $ addEventSource src
   initEvt <- getParameter
-  let evt = unions [ fmap (const (0, head xs)) initEvt
+  let evt = unions [ fmap (const (0, head xs)) initEvt 
+                     -- It should use current behavior instead of hardcoded element
                    , listEvents xs $ tclEvent e
                    ]
   -- UI
