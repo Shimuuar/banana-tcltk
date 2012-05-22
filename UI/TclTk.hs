@@ -15,6 +15,7 @@ module UI.TclTk (
   , configure
   , disable
   , actimateTcl
+  , widget
   ) where
 
 import Control.Monad.Reader
