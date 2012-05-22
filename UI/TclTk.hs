@@ -2,12 +2,14 @@
 module UI.TclTk (
     -- * Basic tcl functions
     puts
-  , set 
+  , set
     -- * Tk widgets
   , frame
   , button
   , label
+    -- ** Text widget
   , textarea
+  , textReplace
     -- ** Tk commands
   , pack
   , configure
@@ -29,9 +31,9 @@ import UI.Reactive
 -- Basic Tcl functions
 ----------------------------------------------------------------
 
--- | puts 
+-- | puts
 puts :: Monad m => Expr p -> TclBuilder p m ()
-puts e 
+puts e
   = tellStmt $ Stmt [Name "puts", e]
 
 -- | Set variable
@@ -47,7 +49,7 @@ set nm expr = tellStmt $ Stmt [Name "set", Name nm, expr]
 -- | Tk frame widget used as container
 frame :: Monad m => [Pack] -> TclBuilder p m a -> TclBuilder p m a
 frame packs content = do
-  nm <- widget "ttk::frame" 
+  nm <- widget "ttk::frame"
           []
           packs
           [ Name "-relief"
@@ -79,6 +81,14 @@ textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilder p m TkName
 textarea opts packs
   = widget "tk::text" opts packs []
 
+textReplace :: Monad m => TkName -> Expr p -> TclBuilder p m ()
+textReplace nm str
+  = tellStmt $ Stmt [ WName nm
+                    , Name "replace" , Name "0.0" , Name "end" , str
+                    ]
+
+
+
 ----------------------------------------------------------------
 -- Tk commands
 ----------------------------------------------------------------
@@ -105,13 +115,14 @@ disable nm flag
                     , Name $ if flag then "disabled" else "!disabled"
                     ]
 
-actimateTcl :: Source 
-            -> Event t p 
-            -> TclBuilder p (NetworkDescription t) () 
+actimateTcl :: Source
+            -> Event t p
+            -> TclBuilder p (NetworkDescription t) ()
             -> TclBuilder q (NetworkDescription t) ()
 actimateTcl src evt command = do
   tcl <- closure command
   lift $ actimateWith (writeTclParam src tcl) evt
+
 
 
 ----------------------------------------------------------------
@@ -119,15 +130,15 @@ actimateTcl src evt command = do
 ----------------------------------------------------------------
 
 -- | Create Tk widget
-widget :: Monad m 
+widget :: Monad m
        => String                -- ^ Widget constructor
-       -> [Option p]            -- ^ Options 
+       -> [Option p]            -- ^ Options
        -> [Pack]                -- ^ Packing options
        -> [Expr p]              -- ^ Arbitrary expressions
        -> TclBuilder p m TkName
 widget wdgt opts packs exprs = do
   nm <- freshTkName
-  tellStmt 
+  tellStmt
     $ Stmt (Name wdgt : WName nm : (renderOption =<< opts) ++ exprs)
   pack nm packs
   return nm
