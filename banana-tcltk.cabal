@@ -31,6 +31,8 @@ Library
     UI.TclTk
     UI.TclTk.AST
     UI.TclTk.Builder
+    UI.Widget
+    UI.Widget.Choice
     UI.Widget.List
     UI.Reactive
     Reactive.Banana.Extra
