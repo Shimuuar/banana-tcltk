@@ -62,15 +62,20 @@ instance Command Int where
                                _        -> Nothing
   decode _   = Nothing
 
-data TclEvent t a = TclEvent 
-  { tclEventPrefix :: String 
+data TclEvent t a = TclEvent
+  { tclEventPrefix :: String
   , tclEvent       :: Event t a
   }
 
-data Cmd a = Cmd String a
+data Cmd a = Cmd
+  { cmdPrexif :: String
+  , cmdValue  :: a
+  }
 
 cmd :: TclEvent t a -> a -> Cmd a
 cmd (TclEvent pref _) x = Cmd pref x
+
+
 
 ----------------------------------------------------------------
 -- Source
@@ -91,8 +96,8 @@ data SourceT = SourceT
 -- | Create new source
 newSource :: ([String] -> IO ()) -> IO Source
 newSource f = do
-  s <- newIORef $ SourceT { eventSource   = Map.empty 
-                          , outputMessage = f 
+  s <- newIORef $ SourceT { eventSource   = Map.empty
+                          , outputMessage = f
                           , sourceCounter = 0
                           , pushInit      = return ()
                           }
@@ -156,13 +161,13 @@ uniqPrefix (Source s) = do
 -- Run tcl
 ----------------------------------------------------------------
 
-type Gui t p a  = TclBuilder 
+type Gui t p a  = TclBuilder
                     (Event t ()) -- Init event
                     p
                     (NetworkDescription t)
                     a
 
--- FIXME: 
+-- FIXME:
 --  This function is incorrect
 --    1. It leaves zombies around
 --    2. Reader thread is not terminated
@@ -182,8 +187,8 @@ runTcl ui = do
   -- Dispatch thread
   forkIO $ do
     forever $ pushMessage src . words =<< readChan ch
-  -- 
-  let network = do 
+  --
+  let network = do
         -- Register init event
         (register,push) <- liftIO newAddHandler
         initEvt         <- fromAddHandler register
