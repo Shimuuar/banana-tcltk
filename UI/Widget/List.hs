@@ -1,5 +1,5 @@
 module UI.Widget.List (
-  startList
+  listWidget
   ) where
 
 import Control.Monad.Trans.Class
@@ -11,6 +11,39 @@ import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
 import UI.Reactive
+import UI.Widget
+
+
+listWidget :: Show a => Source -> [a] -> Gui t p (Widget t (Int,a))
+listWidget _   [] = do
+  nm <- frame [] (return ())
+  return $ Widget nm never
+listWidget src xs = do
+  -- Events
+  e       <- lift $ addEventSource src
+  initEvt <- getParameter
+  let evt = unions [ fmap (const (0, head xs)) initEvt
+                     -- It should use current behavior instead of hardcoded element
+                   , listEvents xs $ tclEvent e
+                   ]
+  -- UI
+  name <- frame [] $
+    withPack PackLeft $ do
+      -- GUI
+      button [Text "<|" ] [] $ cmd e  ToBegin
+      button [Text "<<<"] [] $ cmd e (MoveBack 10)
+      button [Text "<"  ] [] $ cmd e (MoveBack 1)
+      nm <- label [ Text "0" , Width 10 ] []
+      label [ Text $ " / " ++ show (length xs) ] []
+      button [Text ">"  ] [] $ cmd e (MoveFwd  1)
+      button [Text ">>>"] [] $ cmd e (MoveFwd  10)
+      button [Text "|>" ] [] $ cmd e  ToEnd
+      -- Network
+      actimateTcl src (fmap fst evt) $
+        configure nm (LamOpt $ \i -> Text (show i))
+  -- Return data
+  return $ Widget name evt
+
 
 
 -- | Commands for a list
@@ -37,7 +70,7 @@ instance Command ListCmd where
 -- | Behavior of a list
 listEvents :: [a] -> Event t ListCmd -> Event t (Int,a)
 listEvents [] _   = error "Empty list"
-listEvents xs evt 
+listEvents xs evt
   = fmap (\i -> (i, xs !! i)) $ scanE go 0 evt
   where
     go n (MoveFwd  d) = clip $ n + d
@@ -50,33 +83,3 @@ listEvents xs evt
            | otherwise = i
     --
     len = length xs
-
-
-
-startList :: Show a => Source -> [a] -> Gui t p (Event t (Int,a))
-startList _   [] = return never
-startList src xs = do
-  -- Events
-  e       <- lift $ addEventSource src
-  initEvt <- getParameter
-  let evt = unions [ fmap (const (0, head xs)) initEvt 
-                     -- It should use current behavior instead of hardcoded element
-                   , listEvents xs $ tclEvent e
-                   ]
-  -- UI
-  frame [] $
-    withPack PackLeft $ do
-      -- GUI
-      button [Text "<|" ] [] $ cmd e  ToBegin
-      button [Text "<<<"] [] $ cmd e (MoveBack 10)
-      button [Text "<"  ] [] $ cmd e (MoveBack 1)
-      nm <- label [ Text "0" , Width 10 ] []
-      label [ Text $ " / " ++ show (length xs) ] []
-      button [Text ">"  ] [] $ cmd e (MoveFwd  1)
-      button [Text ">>>"] [] $ cmd e (MoveFwd  10)
-      button [Text "|>" ] [] $ cmd e  ToEnd
-      -- Network
-      actimateTcl src (fmap fst evt) $
-        configure nm (LamOpt $ \i -> Text (show i))
-  -- Return data
-  return evt
