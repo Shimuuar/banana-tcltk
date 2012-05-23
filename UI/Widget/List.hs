@@ -2,7 +2,6 @@ module UI.Widget.List (
   listWidget
   ) where
 
-import Control.Arrow
 import Control.Monad.Trans.Class
 
 import Reactive.Banana
@@ -13,7 +12,7 @@ import UI.TclTk.AST
 import UI.TclTk.Builder
 import UI.Reactive
 import UI.Widget
-import Debug.Trace
+
 
 
 
@@ -28,7 +27,6 @@ listWidget src bhvXs = do
       go     = cmd cmdEvt
   ----------------------------------------
   -- Build UI
-  lift $ actimateWith print lenEvt
   name <- frame [] $
     withPack PackLeft $ do
       --
@@ -39,6 +37,11 @@ listWidget src bhvXs = do
       nm   <- label [ Width 10    ] []
       _    <- label [ Text  " / " ] []
       labN <- label []              []
+      --
+      button [Text ">"  ] [] $ go (MoveFwd  1)
+      button [Text ">>>"] [] $ go (MoveFwd  10)
+      button [Text "|>" ] [] $ go  ToEnd
+      -- Actions
       actimateTcl src lenEvt $ do
         configure labN $ LamOpt $ Text . show
       actimateTcl src evt $ do
@@ -46,12 +49,6 @@ listWidget src bhvXs = do
           case e of
             Just (i,_) -> Text $ show i
             Nothing    -> Text "-"
-      --
-      button [Text ">"  ] [] $ go (MoveFwd  1)
-      button [Text ">>>"] [] $ go (MoveFwd  10)
-      button [Text "|>" ] [] $ go  ToEnd
-      -- Network
-      return ()
   -- Return data
   return $ Widget name $ filterJust evt
 
@@ -91,19 +88,13 @@ listEvents listEvt command
     fini (Cursor _ xs i) = Just (i, xs !! i)
     fini Invalid         = Nothing
     -- Accumulate data
-    acc Invalid _
-      | trace "ACC Invalid" False = undefined
-    acc (Cursor len _ i) _
-      | traceShow ("ACC",len,i) False = undefined
-    acc _ (Left xs)
-      | traceShow ("LEFT: ",length xs) False = undefined
-    acc _ (Right c)
-      | traceShow ("RIGHT", c) False = undefined
-
-
     acc Invalid (Left []) = Invalid
-    acc _       (Left xs) = trace "NEWCURSOR" Cursor (length xs) xs 0
+    acc Invalid (Left xs) = Cursor (length xs) xs 0
     acc Invalid _         = Invalid
+    acc (Cursor _   _  n) (Left xs) =
+      Cursor len xs $ clip len n
+      where
+        len = length xs
     acc (Cursor len xs n) (Right c) =
       case c of
         MoveFwd  d -> Cursor len xs $ clip len $ n + d
