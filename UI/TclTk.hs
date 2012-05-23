@@ -48,7 +48,7 @@ set nm expr = tellStmt $ Stmt [Name "set", Name nm, expr]
 ----------------------------------------------------------------
 
 -- | Tk frame widget used as container
-frame :: Monad m => [Pack] -> TclBuilder x p m a -> TclBuilder x p m a
+frame :: Monad m => [Pack] -> TclBuilder x p m () -> TclBuilder x p m TkName
 frame packs content = do
   nm <- widget "ttk::frame"
           []
@@ -58,6 +58,7 @@ frame packs content = do
           , Name "-padding", Name "10"
           ]
   enterWidget nm content
+  return nm
 
 -- | Tk label
 label :: Monad m => [Option p] -> [Pack] -> TclBuilder x p m TkName
