@@ -3,8 +3,9 @@ module UI.Run (
   runGuiInSubprocess
   ) where
 
--- import Control.Monad
+import Control.Monad
 import Control.Concurrent
+import Control.Exception
 
 import Reactive.Banana
 
@@ -20,23 +21,35 @@ import UI.Dispatch
 --    1. It leaves zombies around         [Double fork]
 --    2. Reader thread is not terminated  [Kill it]
 runGuiInSubprocess :: (forall t. GUI t () ()) -> IO ()
-runGuiInSubprocess ui = do
-  -- Create child process
-  (inp,out,err,pid) <- runInteractiveProcess "wish" [] Nothing Nothing
-  let output hs = do 
-        mapM_ (hPutStrLn inp) hs
-        hFlush inp
-        mapM_ putStrLn hs
-  -- Generate GUI
-  (dispatch, network) <- runGUI output ui
-  -- Read replies from child process
-  forkIO $
-    mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
-  -- Send stderr to stderr
-  forkIO $
-    hPutStr stderr =<< hGetContents err
-  -- Start event loop
-  actuate network
-  pushInitEvent dispatch
-  waitForProcess pid
-  return ()
+runGuiInSubprocess ui
+  = bracket
+      (runInteractiveProcess "wish" [] Nothing Nothing)
+      finalize
+      run
+  where
+    -- Output function
+    output h strs = do
+        mapM_ (hPutStrLn h) strs
+        hFlush h
+        -- mapM_ putStrLn hs
+
+    -- Create and execute event network
+    run (inp, out, err, pid) = do
+      (dispatch, network) <- runGUI (output inp) ui
+      forkIO $
+        mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
+      -- Send stderr to stderr
+      forkIO $
+        hPutStr stderr =<< hGetContents err
+      -- Start event loop
+      actuate network
+      pushInitEvent dispatch
+      void $ waitForProcess pid
+
+    -- Finalization
+    finalize (_,_,_, pid) = do
+      c <- getProcessExitCode pid
+      case c of
+        Nothing -> void $ forkIO $ void $ waitForProcess pid
+        _       -> return ()
+
