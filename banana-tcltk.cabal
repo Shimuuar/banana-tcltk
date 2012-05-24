@@ -26,7 +26,8 @@ Library
     process,
     reactive-banana == 0.6.*,
     mtl             >= 2,
-    transformers    >= 0.2.2
+    transformers    >= 0.2.2,
+    ansi-wl-pprint
   Exposed-modules:
     UI.Command
     UI.Dispatch
@@ -38,3 +39,4 @@ Library
     UI.Widget.Choice
     UI.Widget.List
     Reactive.Banana.Extra
+    Control.Reactive.Cofunctor
