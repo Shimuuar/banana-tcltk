@@ -23,6 +23,7 @@ import Reactive.Banana
 import UI.TclTk.AST
 import UI.Command
 
+import Text.PrettyPrint.ANSI.Leijen (text,red,putDoc)
 
 
 
@@ -74,7 +75,8 @@ pushMessage :: Dispatch -> [String] -> IO ()
 pushMessage _ [] = return ()
 pushMessage (Dispatch s) (key:msg) = do
   src <- readIORef s
-  putStrLn $ "Message: " ++ key ++ " " ++ show msg
+  putDoc $ red $ text $ "Message: " ++ key ++ " : " ++ show msg
+  putStrLn ""
   case Map.lookup key $ eventDispatch src of
     Just f  -> f msg
     Nothing -> return ()

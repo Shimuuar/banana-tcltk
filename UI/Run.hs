@@ -15,6 +15,8 @@ import System.Process
 import UI.TclTk.Builder
 import UI.Dispatch
 
+import Text.PrettyPrint.ANSI.Leijen
+
 
 -- FIXME:
 --  This function is incorrect
@@ -31,8 +33,9 @@ runGuiInSubprocess ui
     output h strs = do
         mapM_ (hPutStrLn h) strs
         hFlush h
-        -- mapM_ putStrLn hs
-
+        forM_ strs $ \s -> do 
+          putDoc $ green $ text s
+          putStrLn ""
     -- Create and execute event network
     run (inp, out, err, pid) = do
       (dispatch, network) <- runGUI (output inp) ui
