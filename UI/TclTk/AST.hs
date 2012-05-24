@@ -153,6 +153,8 @@ renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
   where
     escape '"' = "\\\""
     escape '$' = "\\$"
+    escape '[' = "\\["
+    escape ']' = "\\]"
     escape  c  = [c]
 renderExpr _ _ (LitInt  i) = show i
 renderExpr _ _ (LitReal x) = show x
