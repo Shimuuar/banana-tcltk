@@ -21,6 +21,7 @@ module UI.TclTk (
   , initEvent
   , addTclEvent
   , actimateTcl
+  , actimateIO
   ) where
 
 import UI.Command

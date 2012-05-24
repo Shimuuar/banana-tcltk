@@ -23,6 +23,7 @@ module UI.TclTk.Builder (
   , initEvent
   , addTclEvent
   , actimateTcl
+  , actimateIO
   ) where
 
 
@@ -205,6 +206,11 @@ actimateTcl evt command = do
   tcl   <- closure command
   lift $ actimateWith (writeTclParam d tcl) evt
 
+actimateIO :: Event t a
+           -> (a -> IO ())
+           -> GUI t p ()
+actimateIO evt action =
+  lift $ actimateWith action evt
 
 initEvent :: GUI t p (Event t ())
 initEvent = snd <$> getParameter
