@@ -24,7 +24,7 @@ choiceWidget xs evt = do
   let Cmd pref _ = cmd undefined
   -- notebook widget
   note   <- widget "ttk::notebook"
-              [] [] []
+              [] [Fill FillX] []
   -- Bind tab change event
   stmt $ Stmt [ Name "bind"
               , WName note

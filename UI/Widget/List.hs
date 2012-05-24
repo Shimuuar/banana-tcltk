@@ -24,20 +24,25 @@ listWidget bhvXs = do
       evt    = listEvents xsEvt cmdEvt
   ----------------------------------------
   -- Build UI
-  name <- frame [] $
+  name <- frame [Fill FillX] $
     withPack PackLeft $ do
+      spacer
       --
       button [Text "<|" ] [] $ cmd  ToBegin
       button [Text "<<<"] [] $ cmd (MoveBack 10)
       button [Text "<"  ] [] $ cmd (MoveBack 1)
       -- labels
+      spacer
       nm   <- label [ Width 10    ] []
       _    <- label [ Text  " / " ] []
       labN <- label []              []
+      frame [Expand True, Fill FillBoth] $ return ()
       --
       button [Text ">"  ] [] $ cmd (MoveFwd  1)
       button [Text ">>>"] [] $ cmd (MoveFwd  10)
       button [Text "|>" ] [] $ cmd  ToEnd
+      --
+      spacer
       -- Actions
       actimateTcl lenEvt $ do
         configure labN $ LamOpt $ Text . show
