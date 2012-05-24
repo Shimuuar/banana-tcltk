@@ -5,6 +5,7 @@ module UI.TclTk (
   , set
     -- * Tk widgets
   , frame
+  , spacer
   , button
   , label
     -- ** Text widget
@@ -58,6 +59,10 @@ frame packs content = do
           [ Name "-padding", Name "10" ]
   enterWidget nm content
   return nm
+
+spacer :: Monad m => TclBuilderT x p m TkName
+spacer = frame [Expand True, Fill FillBoth]
+       $ return ()
 
 -- | Tk label
 label :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
