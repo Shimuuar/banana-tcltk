@@ -4,7 +4,6 @@ module UI.Widget.Choice (
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
 
 import Reactive.Banana
 import Reactive.Banana.Extra
@@ -12,42 +11,42 @@ import Reactive.Banana.Extra
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
-import UI.Reactive
+import UI.Command
 
 
 
-choiceWidget :: Source
-             -> [(String, Event t a -> Gui t p TkName)] -- List of choices
+choiceWidget :: [(String, Event t a -> GUI t p TkName)] -- List of choices
              -> Event t a
-             -> Gui t p ()
-choiceWidget _ [] _ = return ()
-choiceWidget src xs evt = do
-  idxEvt <- lift $ addEventSource src
+             -> GUI t p ()
+choiceWidget [] _ = return ()
+choiceWidget xs evt = do
+  (cmd,idxEvt) <- addTclEvent
+  let Cmd pref _ = cmd undefined
   -- notebook widget
   note   <- widget "ttk::notebook"
               [] [] []
   -- Bind tab change event
-  tellStmt $ Stmt [ Name "bind"
-                  , WName note
-                  , Name "<<NotebookTabChanged>>"
-                  , Braces [ Name "puts"
-                           , Eval [ Name "concat"
-                                  , LitStr (tclEventPrefix idxEvt)
-                                  , Eval [ WName note
-                                         , Name "index"
-                                         , Name "current"
-                                         ]
-                                  ]
-                           ]
-                  ]
+  stmt $ Stmt [ Name "bind"
+              , WName note
+              , Name "<<NotebookTabChanged>>"
+              , Braces [ Name "puts"
+                       , Eval [ Name "concat"
+                              , LitStr pref
+                              , Eval [ WName note
+                                     , Name "index"
+                                     , Name "current"
+                                     ]
+                              ]
+                       ]
+              ]
   -- Add child widgets
   enterWidget note $ do
     forM_ (zip [0::Int ..] xs) $ \(i,(title, gui)) -> do
-      wdgt <- gui $ tabEvents i evt $ tclEvent idxEvt
-      tellStmt $ Stmt [ WName note
-                      , Name  "add"  , WName  wdgt
-                      , Name  "-text", LitStr title
-                      ]
+      wdgt <- gui $ tabEvents i evt idxEvt
+      stmt $ Stmt [ WName note
+                  , Name  "add"  , WName  wdgt
+                  , Name  "-text", LitStr title
+                  ]
 
 
 

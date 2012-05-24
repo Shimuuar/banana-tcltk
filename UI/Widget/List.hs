@@ -10,41 +10,38 @@ import Reactive.Banana.Extra
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
-import UI.Reactive
 import UI.Widget
+import UI.Command
 
 
-
-
-listWidget :: Show a => Source -> Behavior t [a] -> Gui t p (Widget t (Int,a))
-listWidget src bhvXs = do
+listWidget :: Show a => Behavior t [a] -> GUI t p (Widget t (Int,a))
+listWidget bhvXs = do
   -- Events
-  cmdEvt  <- lift $ addEventSource src
-  initEvt <- getParameter
-  xsEvt   <- lift $ union (bhvXs <@ initEvt) <$> changes bhvXs
+  (cmd,cmdEvt) <- addTclEvent
+  initEvt      <- initEvent
+  xsEvt        <- lift $ union (bhvXs <@ initEvt) <$> changes bhvXs
   let lenEvt = length <$> xsEvt
-      evt    = listEvents xsEvt $ tclEvent cmdEvt
-      go     = cmd cmdEvt
+      evt    = listEvents xsEvt cmdEvt
   ----------------------------------------
   -- Build UI
   name <- frame [] $
     withPack PackLeft $ do
       --
-      button [Text "<|" ] [] $ go  ToBegin
-      button [Text "<<<"] [] $ go (MoveBack 10)
-      button [Text "<"  ] [] $ go (MoveBack 1)
+      button [Text "<|" ] [] $ cmd  ToBegin
+      button [Text "<<<"] [] $ cmd (MoveBack 10)
+      button [Text "<"  ] [] $ cmd (MoveBack 1)
       -- labels
       nm   <- label [ Width 10    ] []
       _    <- label [ Text  " / " ] []
       labN <- label []              []
       --
-      button [Text ">"  ] [] $ go (MoveFwd  1)
-      button [Text ">>>"] [] $ go (MoveFwd  10)
-      button [Text "|>" ] [] $ go  ToEnd
+      button [Text ">"  ] [] $ cmd (MoveFwd  1)
+      button [Text ">>>"] [] $ cmd (MoveFwd  10)
+      button [Text "|>" ] [] $ cmd  ToEnd
       -- Actions
-      actimateTcl src lenEvt $ do
+      actimateTcl lenEvt $ do
         configure labN $ LamOpt $ Text . show
-      actimateTcl src evt $ do
+      actimateTcl evt $ do
         configure nm $ LamOpt $ \e ->
           case e of
             Just (i,_) -> Text $ show i

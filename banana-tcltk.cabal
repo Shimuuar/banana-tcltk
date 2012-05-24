@@ -28,11 +28,13 @@ Library
     mtl             >= 2,
     transformers    >= 0.2.2
   Exposed-modules:
+    UI.Command
+    UI.Dispatch
+    UI.Run
     UI.TclTk
     UI.TclTk.AST
     UI.TclTk.Builder
     UI.Widget
     UI.Widget.Choice
     UI.Widget.List
-    UI.Reactive
     Reactive.Banana.Extra
