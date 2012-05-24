@@ -41,7 +41,7 @@ import Reactive.Banana.Extra
 import UI.TclTk.AST
 import UI.Command
 import UI.Dispatch
-
+import Paths_banana_tcltk
 
 ----------------------------------------------------------------
 -- Data types
@@ -119,6 +119,8 @@ runGUI out gui = do
   (register, push) <- newAddHandler  
   setOutput   dispatch  out
   setPushInit dispatch (push ())
+  -- Send library code
+  out . pure =<< readFile =<< getDataFileName "tcl-bits/banana.tcl"
   -- Network
   let network = do 
         (_,tcl) <- flip runTclBuilderT () $ do

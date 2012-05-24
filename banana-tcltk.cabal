@@ -13,10 +13,12 @@ Homepage:       http://bitbucket.org/Shimuuar/banana-tcltk
 Category:       Data
 Build-Type:     Simple
 
+Data-files:
+  tcl-bits/banana.tcl
+
 source-repository head
   type:     hg
   location: http://bitbucket.org/Shimuuar/banana-tcltk
-
 
 Library
   Ghc-options:          -Wall -fno-warn-unused-do-bind
@@ -40,3 +42,5 @@ Library
     UI.Widget.List
     Reactive.Banana.Extra
     Control.Reactive.Cofunctor
+  Other-modules:
+    Paths_banana_tcltk
