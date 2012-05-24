@@ -55,10 +55,7 @@ frame packs content = do
   nm <- widget "ttk::frame"
           []
           packs
-          [ Name "-relief"
-          , Name "groove"
-          , Name "-padding", Name "10"
-          ]
+          [ Name "-padding", Name "10" ]
   enterWidget nm content
   return nm
 
