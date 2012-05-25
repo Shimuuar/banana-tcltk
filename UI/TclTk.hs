@@ -11,6 +11,9 @@ module UI.TclTk (
   , label
     -- ** Button
   , button
+    -- ** Checkbutton
+  , checkbutton
+  , checkbuttonGui
     -- ** Entry widgets
   , entry
   , entryInt
@@ -96,6 +99,22 @@ button opts packs cmd
       ]
 
 
+checkbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+checkbutton opts packs
+  = widget "ttk::checkbutton" opts packs []
+
+checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (TkName, Event t Bool)
+checkbuttonGui opts packs st = do
+  nm <- checkbutton opts packs
+  -- Event
+  (cmd, evt) <- addTclEvent
+  let Cmd pref _ = cmd undefined
+  stmt $ Stmt [ Name  "checkbutton_event_toggle"
+              , Name  pref
+              , WName nm
+              , LitInt (if st then 1 else 0)
+              ]
+  return (nm, evt)
 
 -- | Entry widget
 entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
