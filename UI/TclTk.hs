@@ -13,6 +13,7 @@ module UI.TclTk (
   , button
     -- ** Entry widgets
   , entry
+  , entryInt
     -- ** Text widget
   , textarea
   , textReplace
@@ -32,6 +33,8 @@ module UI.TclTk (
   , actimateTcl
   , actimateIO
   ) where
+
+import Reactive.Banana
 
 import UI.Command
 import UI.TclTk.AST
@@ -99,7 +102,31 @@ entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 entry opts packs
   = widget "ttk::entry" opts packs []
 
-
+-- | Entry which may hold space
+entryInt :: [Option p] -> [Pack] -> Int -> GUI t p (TkName, Event t Int, Behavior t Int)
+entryInt opts packs n = do
+  -- Widget
+  nm <- entry opts packs
+  -- Event
+  (cmd, evt) <- addTclEvent
+  let Cmd pref _ = cmd undefined
+  -- Set up variables
+  vCur  <- freshVar
+  vBack <- freshVar
+  set vCur  $ LitInt n
+  set vBack $ LitStr ""
+  configure nm $ TextVariable vCur
+  -- Bind
+  let call = [ Name "entry_validate_int"
+             , Name pref
+             , Name vCur
+             , Name vBack
+             ]
+  bind nm "<Leave>"           $ Braces call
+  bind nm "<KeyPress-Return>" $ Braces call
+  -- Update
+  stmt $ Stmt call
+  return (nm, evt, stepper n evt)
 
 
 -- | Tk text area

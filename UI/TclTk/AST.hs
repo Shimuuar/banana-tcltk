@@ -51,6 +51,7 @@ data Option a
   | Width   Int
   | Height  Int
   | Padding Int
+  | TextVariable String
   | LamOpt (a -> Option a)
 
 -- | Packing for widgets
@@ -121,6 +122,7 @@ renderOption (Text    s) = [Name "-text"   , LitStr s]
 renderOption (Width   n) = [Name "-width"  , LitInt n]
 renderOption (Height  n) = [Name "-height" , LitInt n]
 renderOption (Padding n) = [Name "-padding", LitInt n]
+renderOption (TextVariable v) = [ Name "-textvariable", Name v]
 renderOption (LamOpt  f) = [LamE $ SeqE . renderOption . f ]
 
 
