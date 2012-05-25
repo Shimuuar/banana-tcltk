@@ -31,3 +31,6 @@ pairWith f ea eb
     acc (_,b) (Left  a) = (Just a, b)
     acc (a,_) (Right b) = (a, Just b)
     fini (a,b) = f <$> a <*> b
+
+pairE :: Event t a -> Event t b -> Event t (a, b)
+pairE = pairWith (,)
