@@ -35,6 +35,7 @@ data Expr a
   | LitStr  String              -- ^ Literal string
   | LitInt  Int                 -- ^ Literal integer
   | LitReal Double              -- ^ Literal floating point value
+  | LitBool Bool                -- ^ Literal boolen
 
   | Braces  [Expr a]            -- ^ Braces {...}
   | BracesS [Tcl  a]            -- ^ Braces for statement
@@ -162,6 +163,7 @@ renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
     escape  c  = [c]
 renderExpr _ _ (LitInt  i) = show i
 renderExpr _ _ (LitReal x) = show x
+renderExpr _ _ (LitBool b) = if b then "1" else "0"
 -- Lambda
 renderExpr n x (LamE lam)  = renderExpr n x (lam x)
 renderExpr n x (SeqE es )  = unwords $ map (renderExpr n x) es
