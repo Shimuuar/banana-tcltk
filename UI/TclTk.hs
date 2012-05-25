@@ -4,10 +4,13 @@ module UI.TclTk (
     puts
   , set
     -- * Tk widgets
+    -- ** Frame
   , frame
   , spacer
-  , button
+    -- ** Label
   , label
+    -- ** Button
+  , button
     -- ** Entry widgets
   , entry
     -- ** Text widget
@@ -18,6 +21,8 @@ module UI.TclTk (
   , configure
   , disable
   , bind
+    -- * Callbacks
+  , commandExpr
     -- * Helpers
   , widget
     -- * FRP
@@ -67,28 +72,35 @@ spacer :: Monad m => TclBuilderT x p m TkName
 spacer = frame [Expand True, Fill FillBoth]
        $ return ()
 
+
+
 -- | Tk label
 label :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 label opts packs
   = widget "ttk::label" opts packs []
 
+
+
+
 -- | Tk button
 button :: (Monad m, Command a) => [Option p] -> [Pack] -> Cmd a -> TclBuilderT x p m TkName
-button opts packs (Cmd pref action)
+button opts packs cmd
   = widget "ttk::button"
       opts
       packs
       [ Name "-command"
-      , Braces [Name "puts", LitStr command]
+      , Braces $ commandExpr cmd
       ]
-  where
-    command = unwords $ pref : encode action
+
 
 
 -- | Entry widget
 entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 entry opts packs
   = widget "ttk::entry" opts packs []
+
+
+
 
 -- | Tk text area
 textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
@@ -136,6 +148,22 @@ bind nm evt expr
                 , Name  evt
                 , expr
                 ]
+
+
+
+----------------------------------------------------------------
+-- Callbacks
+----------------------------------------------------------------
+
+commandExpr :: Command a => Cmd a -> [Expr p]
+commandExpr (Cmd pref action) =
+  [ Name "puts"
+  , LitStr command
+  ]
+  where
+    command = unwords $ pref : encode action
+
+
 
 ----------------------------------------------------------------
 -- Helpers
