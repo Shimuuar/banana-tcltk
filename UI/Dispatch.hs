@@ -22,9 +22,9 @@ import Reactive.Banana
 
 import UI.TclTk.AST
 import UI.Command
+import UI.Log
 
-import Text.PrettyPrint.ANSI.Leijen (text,red,putDoc)
-
+import Text.PrettyPrint.ANSI.Leijen (red,text)
 
 
 ----------------------------------------------------------------
@@ -75,11 +75,10 @@ pushMessage :: Dispatch -> [String] -> IO ()
 pushMessage _ [] = return ()
 pushMessage (Dispatch s) (key:msg) = do
   src <- readIORef s
-  putDoc $ red $ text $ "Message: " ++ key ++ " : " ++ show msg
-  putStrLn ""
+  logDoc $ red $ text $ "Message: " ++ key ++ " : " ++ show msg
   case Map.lookup key $ eventDispatch src of
     Just f  -> f msg
-    Nothing -> return ()
+    Nothing -> logDoc $ red $ text ">>> Unknown!"
 
 -- |
 registerEvent :: (Command a) => Dispatch -> String -> NetworkDescription t (AddHandler a)

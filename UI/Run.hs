@@ -14,8 +14,10 @@ import System.Process
 
 import UI.TclTk.Builder
 import UI.Dispatch
+import UI.Log
 
 import Text.PrettyPrint.ANSI.Leijen
+
 
 
 -- FIXME:
@@ -34,8 +36,7 @@ runGuiInSubprocess ui
         mapM_ (hPutStrLn h) strs
         hFlush h
         forM_ strs $ \s -> do 
-          putDoc $ green $ text s
-          putStrLn ""
+          logDoc $ green $ text s
     -- Create and execute event network
     run (inp, out, err, pid) = do
       (dispatch, network) <- runGUI (output inp) ui
@@ -43,7 +44,7 @@ runGuiInSubprocess ui
         mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
       -- Send stderr to stderr
       forkIO $
-        hPutStr stderr =<< hGetContents err
+        mapM_ logStr . lines =<< hGetContents err
       -- Start event loop
       actuate network
       pushInitEvent dispatch
@@ -55,4 +56,3 @@ runGuiInSubprocess ui
       case c of
         Nothing -> void $ forkIO $ void $ waitForProcess pid
         _       -> return ()
-

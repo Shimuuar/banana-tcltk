@@ -34,6 +34,7 @@ Library
     UI.Command
     UI.Dispatch
     UI.Run
+    UI.Log
     UI.TclTk
     UI.TclTk.AST
     UI.TclTk.Builder
