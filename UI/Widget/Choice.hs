@@ -26,16 +26,10 @@ choiceWidget xs evt = do
   note   <- widget "ttk::notebook"
               [] [Fill FillX] []
   -- Bind tab change event
-  bind note "<<NotebookTabChanged>>"
-    $ Braces [ Name "puts"
-             , Eval [ Name "concat"
-                    , LitStr pref
-                    , Eval [ WName note
-                           , Name "index"
-                           , Name "current"
-                           ]
-                    ]
-             ]
+  stmt $ Stmt [ Name  "notebook_event_tab"
+              , Name  pref
+              , WName note
+              ]
   -- Add child widgets
   enterWidget note $ do
     forM_ (zip [0::Int ..] xs) $ \(i,(title, gui)) -> do

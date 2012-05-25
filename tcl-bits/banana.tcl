@@ -11,7 +11,7 @@
 #   pref   - unique command prefix
 #   v_cur  - current variable
 #   v_back - backup variable
-proc valid_int_entry { pref vcur vback } {
+proc entry_validate_int { pref vcur vback } {
     upvar $vcur  cur
     upvar $vback back
     # no need to do anything if entry didn't change
@@ -25,4 +25,16 @@ proc valid_int_entry { pref vcur vback } {
 	    set cur $back
 	}
     }
+}
+
+
+# Generate event whenever tab in notebook widget is changed
+#
+#   pref - event prefix
+#   n    - notebook widget
+proc notebook_event_tab { pref n } {
+    proc callback { pref n } {
+	puts [ concat $pref [ $n index current ] ]
+    }
+    bind $n <<NotebookTabChanged>> [list callback $pref $n ]
 }
