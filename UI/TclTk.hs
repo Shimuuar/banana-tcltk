@@ -106,14 +106,22 @@ checkbutton opts packs
 checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (TkName, Event t Bool)
 checkbuttonGui opts packs st = do
   nm <- checkbutton opts packs
-  -- Event
+  -- Capture event
   (cmd, evt) <- addTclEvent
   let Cmd pref _ = cmd undefined
-  stmt $ Stmt [ Name  "checkbutton_event_toggle"
-              , Name  pref
-              , WName nm
-              , LitInt (if st then 1 else 0)
+  -- Set input handler
+  stmt $ Stmt [ Name    "checkbutton_event_toggle"
+              , Name    pref
+              , WName   nm
+              , LitBool st
               ]
+  -- Set widget state on event
+  actimateTcl evt $ do
+    stmt $ Lam $ \f -> [Stmt [ WName nm
+                             , Name "state"
+                             , Name $ if f then "selected" else "!selected"
+                             ]
+                       ]
   return (nm, evt)
 
 -- | Entry widget
