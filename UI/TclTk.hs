@@ -8,6 +8,8 @@ module UI.TclTk (
   , spacer
   , button
   , label
+    -- ** Entry widgets
+  , entry
     -- ** Text widget
   , textarea
   , textReplace
@@ -15,6 +17,7 @@ module UI.TclTk (
   , pack
   , configure
   , disable
+  , bind
     -- * Helpers
   , widget
     -- * FRP
@@ -54,9 +57,9 @@ set nm expr = stmt $ Stmt [Name "set", Name nm, expr]
 frame :: Monad m => [Pack] -> TclBuilderT x p m () -> TclBuilderT x p m TkName
 frame packs content = do
   nm <- widget "ttk::frame"
-          []
+          [ Padding 10 ]
           packs
-          [ Name "-padding", Name "10" ]
+          []
   enterWidget nm content
   return nm
 
@@ -81,6 +84,11 @@ button opts packs (Cmd pref action)
   where
     command = unwords $ pref : encode action
 
+
+-- | Entry widget
+entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+entry opts packs
+  = widget "ttk::entry" opts packs []
 
 -- | Tk text area
 textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
@@ -107,8 +115,8 @@ pack nm packs = do
                       return (Side c : packs)
              _  -> return packs
   stmt $ Stmt $ [ Name "pack"
-                    , WName nm
-                    ] ++ (renderPack =<< opts)
+                , WName nm
+                ] ++ (renderPack =<< opts)
 
 configure :: Monad m => TkName -> Option p -> TclBuilderT x p m ()
 configure nm opt
@@ -117,10 +125,17 @@ configure nm opt
 disable :: Monad m => TkName -> Bool -> TclBuilderT x p m ()
 disable nm flag
   = stmt $ Stmt [ WName nm
-                    , Name "state"
-                    , Name $ if flag then "disabled" else "!disabled"
-                    ]
+                , Name "state"
+                , Name $ if flag then "disabled" else "!disabled"
+                ]
 
+bind :: Monad m => TkName -> String -> Expr p -> TclBuilderT x p m ()
+bind nm evt expr
+  = stmt $ Stmt [ Name  "bind"
+                , WName nm
+                , Name  evt
+                , expr
+                ]
 
 ----------------------------------------------------------------
 -- Helpers

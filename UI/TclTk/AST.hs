@@ -47,9 +47,10 @@ newtype TkName = TkName [String]
 
 -- | Widget options
 data Option a
-  = Text   String
-  | Width  Int
-  | Height Int
+  = Text    String
+  | Width   Int
+  | Height  Int
+  | Padding Int
   | LamOpt (a -> Option a)
 
 -- | Packing for widgets
@@ -116,10 +117,11 @@ renderPack (Expand f) = [ Name "-expand", LitInt $ if f then 1 else 0 ]
 
 -- | Convert options to expressions
 renderOption :: Option a -> [Expr a]
-renderOption (Text   s) = [Name "-text"  , LitStr s]
-renderOption (Width  n) = [Name "-width" , LitInt n]
-renderOption (Height n) = [Name "-height", LitInt n]
-renderOption (LamOpt f) = [LamE $ SeqE . renderOption . f ]
+renderOption (Text    s) = [Name "-text"   , LitStr s]
+renderOption (Width   n) = [Name "-width"  , LitInt n]
+renderOption (Height  n) = [Name "-height" , LitInt n]
+renderOption (Padding n) = [Name "-padding", LitInt n]
+renderOption (LamOpt  f) = [LamE $ SeqE . renderOption . f ]
 
 
 
