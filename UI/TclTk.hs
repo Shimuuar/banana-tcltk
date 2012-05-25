@@ -4,6 +4,8 @@ module UI.TclTk (
     puts
   , set
     -- * Tk widgets
+  , Widget(..)
+  , mkWidget
     -- ** Frame
   , frame
   , spacer
@@ -44,7 +46,16 @@ import UI.TclTk.AST
 import UI.TclTk.Builder
 
 
-  
+data Widget t a = Widget
+  { widgetName     :: TkName
+  , widgetEvent    :: Event t a
+  , widgetBehavior :: Behavior t a
+  }
+
+mkWidget :: TkName -> a -> Event t a -> Widget t a
+mkWidget nm x0 evt = Widget nm evt (stepper x0 evt)
+
+
 ----------------------------------------------------------------
 -- Basic Tcl functions
 ----------------------------------------------------------------
@@ -103,7 +114,7 @@ checkbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 checkbutton opts packs
   = widget "ttk::checkbutton" opts packs []
 
-checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (TkName, Event t Bool)
+checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool)
 checkbuttonGui opts packs st = do
   nm <- checkbutton opts packs
   -- Capture event
@@ -122,7 +133,7 @@ checkbuttonGui opts packs st = do
                              , Name $ if f then "selected" else "!selected"
                              ]
                        ]
-  return (nm, evt)
+  return $ mkWidget nm st evt
 
 -- | Entry widget
 entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
@@ -130,7 +141,7 @@ entry opts packs
   = widget "ttk::entry" opts packs []
 
 -- | Entry which may hold space
-entryInt :: [Option p] -> [Pack] -> Int -> GUI t p (TkName, Event t Int, Behavior t Int)
+entryInt :: [Option p] -> [Pack] -> Int -> GUI t p (Widget t Int)
 entryInt opts packs n = do
   -- Widget
   nm <- entry opts packs
@@ -153,7 +164,7 @@ entryInt opts packs n = do
   bind nm "<KeyPress-Return>" $ Braces call
   -- Update
   stmt $ Stmt call
-  return (nm, evt, stepper n evt)
+  return $ mkWidget nm n evt
 
 
 -- | Tk text area

@@ -10,11 +10,10 @@ import Reactive.Banana.Extra
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
-import UI.Widget
 import UI.Command
 
 
-listWidget :: Show a => Behavior t [a] -> GUI t p (Widget t (Int,a))
+listWidget :: Show a => Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
 listWidget bhvXs = do
   -- Events
   (cmd,cmdEvt) <- addTclEvent
@@ -52,7 +51,7 @@ listWidget bhvXs = do
             Just (i,_) -> Text $ show i
             Nothing    -> Text "-"
   -- Return data
-  return $ Widget name $ filterJust evt
+  return (name, filterJust evt)
 
 
 
