@@ -33,19 +33,19 @@ proc entry_validate_int { pref vcur vback } {
 #   pref - event prefix
 #   n    - notebook widget
 proc notebook_event_tab { pref n } {
-    proc callback { pref n } {
+    proc notebook_event_tab_callback { pref n } {
 	puts [ concat $pref [ $n index current ] ]
     }
-    bind $n <<NotebookTabChanged>> [list callback $pref $n ]
+    bind $n <<NotebookTabChanged>> [list notebook_event_tab_callback $pref $n ]
 }
 
 
 proc checkbutton_event_toggle { pref n st } {
     # Callback
-    proc callback { pref n } {
+    proc checkbutton_event_toggle_callback { pref n } {
 	puts [ concat $pref [ $n instate selected ] ]
     }
-    $n configure -command [list callback $pref $n]
+    $n configure -command [list checkbutton_event_toggle_callback $pref $n]
     # Set initial state and ping back
     if $st {
 	$n state selected
