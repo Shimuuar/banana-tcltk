@@ -88,6 +88,7 @@ instance Cofunctor Expr where
   cofmap _ (LitStr  s) = LitStr  s
   cofmap _ (LitInt  i) = LitInt  i
   cofmap _ (LitReal x) = LitReal x
+  cofmap _ (LitBool x) = LitBool x
   cofmap f (LamE lam)  = LamE $ cofmap f . lam . f
   cofmap f (SeqE es )  = SeqE $ map (cofmap f) es
   
