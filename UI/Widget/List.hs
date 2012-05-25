@@ -2,8 +2,6 @@ module UI.Widget.List (
   listWidget
   ) where
 
-import Control.Monad.Trans.Class
-
 import Reactive.Banana
 import Reactive.Banana.Extra
 
@@ -17,8 +15,7 @@ listWidget :: Show a => Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
 listWidget bhvXs = do
   -- Events
   (cmd,cmdEvt) <- addTclEvent
-  initEvt      <- initEvent
-  xsEvt        <- lift $ union (bhvXs <@ initEvt) <$> changes bhvXs
+  xsEvt        <- eventChanges bhvXs
   let lenEvt = length <$> xsEvt
       evt    = listEvents xsEvt cmdEvt
   ----------------------------------------

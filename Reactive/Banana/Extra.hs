@@ -7,6 +7,18 @@ import Reactive.Banana
 scanE :: (a -> b -> a) -> a -> Event t b -> Event t a
 scanE fold x0 = accumE x0 . fmap (flip fold)
 
+scanE2 :: (a -> b -> a) 
+       -> (a -> c -> a)
+       ->  a
+       -> Event t b
+       -> Event t c
+       -> Event t a
+scanE2 fb fc a0 eb ec = scanE go a0 $ (Right <$> eb) `union` (Left <$> ec)
+  where
+    go a (Right b) = fb a b
+    go a (Left  c) = fc a c
+
+
 actimateWith :: (a -> IO ()) -> Event t a -> NetworkDescription t ()
 actimateWith f = reactimate . fmap f
 

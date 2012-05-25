@@ -20,6 +20,7 @@ module UI.TclTk.Builder (
   , askPacking
     -- ** FRP bits
   , closure
+  , eventChanges
   , initEvent
   , addTclEvent
   , actimateTcl
@@ -206,13 +207,22 @@ actimateTcl :: Event t p        -- ^ Event
 actimateTcl evt command = do
   (d,_) <- getParameter
   tcl   <- closure command
-  lift $ actimateWith (writeTclParam d tcl) evt
+  initE <- initEvent
+  lift $ actimateWith (writeTclParam d tcl)
+       $ filterJust
+       $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt
 
 actimateIO :: Event t a
            -> (a -> IO ())
            -> GUI t p ()
 actimateIO evt action =
   lift $ actimateWith action evt
+
+eventChanges :: Behavior t a -> GUI t p (Event t a)
+eventChanges bhv = do
+  initEvt <- initEvent
+  evt     <- lift $ changes bhv
+  return $ (bhv <@ initEvt) `union` evt
 
 initEvent :: GUI t p (Event t ())
 initEvent = snd <$> getParameter

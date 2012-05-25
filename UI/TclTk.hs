@@ -34,6 +34,7 @@ module UI.TclTk (
     -- * FRP
   , closure
   , initEvent
+  , eventChanges
   , addTclEvent
   , actimateTcl
   , actimateIO
