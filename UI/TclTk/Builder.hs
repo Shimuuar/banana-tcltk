@@ -8,6 +8,7 @@ module UI.TclTk.Builder (
   , runTclBuilderT
   , runGUI
     -- * Basic combinators
+  , castBuilder
   , stmt
   , addParameter
   , getParameter
@@ -27,12 +28,13 @@ module UI.TclTk.Builder (
   , actimateIO
   ) where
 
-
+import Control.Arrow
 import Control.Applicative
 
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
+import Control.Reactive.Cofunctor
 
 import Data.IORef
 
@@ -138,6 +140,10 @@ runGUI out gui = do
 ----------------------------------------------------------------
 -- Basic combinators
 ----------------------------------------------------------------
+
+castBuilder :: Monad m => (q -> p) -> TclBuilderT x p m a -> TclBuilderT x q m a
+castBuilder f (TclBuilderT m)
+  = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (cofmap f))) m
 
 -- | Add single tcl statemetn
 stmt :: Monad m => Tcl p -> TclBuilderT x p m ()
