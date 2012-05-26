@@ -8,6 +8,7 @@ module UI.TclTk (
   , mkWidget
     -- ** Frame
   , frame
+  , frame_
   , spacer
     -- ** Label
   , label
@@ -77,17 +78,22 @@ set nm expr = stmt $ Stmt [Name "set", Name nm, expr]
 ----------------------------------------------------------------
 
 -- | Tk frame widget used as container
-frame :: Monad m => [Pack] -> TclBuilderT x p m () -> TclBuilderT x p m TkName
+frame :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
 frame packs content = do
   nm <- widget "ttk::frame"
           [ Padding 10 ]
           packs
           []
-  enterWidget nm content
+  x <- enterWidget nm content
+  return (nm,x)
+
+frame_ :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m TkName
+frame_ packs content = do
+  (nm, _) <- frame packs content
   return nm
 
 spacer :: Monad m => TclBuilderT x p m TkName
-spacer = frame [Expand True, Fill FillBoth]
+spacer = frame_ [Expand True, Fill FillBoth]
        $ return ()
 
 
