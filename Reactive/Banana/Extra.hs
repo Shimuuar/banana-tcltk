@@ -3,31 +3,44 @@ module Reactive.Banana.Extra where
 import Control.Applicative
 import Reactive.Banana
 
+
+----------------------------------------------------------------
+-- Various scans
+----------------------------------------------------------------
+
 -- | 'scanl' like accumulation function
 scanE :: (a -> b -> a) -> a -> Event t b -> Event t a
 scanE fold x0 = accumE x0 . fmap (flip fold)
 
-scanE2 :: (a -> b -> a) 
+scanE2 :: (a -> b -> a)
        -> (a -> c -> a)
        ->  a
        -> Event t b
        -> Event t c
        -> Event t a
-scanE2 fb fc a0 eb ec = scanE go a0 $ (Right <$> eb) `union` (Left <$> ec)
+scanE2 fb fc a0 eb ec = scanE go a0 $ joinE ec eb
   where
     go a (Right b) = fb a b
     go a (Left  c) = fc a c
 
 
-actimateWith :: (a -> IO ()) -> Event t a -> NetworkDescription t ()
-actimateWith f = reactimate . fmap f
+injectModify :: Event t a -> Event t (a -> a) -> Event t a
+injectModify ea ef 
+  = filterJust
+  $ scanE acc Nothing
+  $ joinE ea ef
+  where
+    acc _ (Left  a) = Just a
+    acc a (Right f) = fmap f a
 
-actimateWith_ :: IO () -> Event t a -> NetworkDescription t ()
-actimateWith_ f = reactimate . fmap (const f)
 
-actimateBhvWith :: (a -> IO ()) -> Behavior t a -> NetworkDescription t ()
-actimateBhvWith f bhv
-  = actimateWith f =<< changes bhv
+
+----------------------------------------------------------------
+-- Zips
+----------------------------------------------------------------
+
+joinE :: Event t a -> Event t b -> Event t (Either a b)
+joinE ea eb = (Left <$> ea) `union` (Right <$> eb)
 
 zipE :: (a -> b -> c) -> Behavior t a -> Event t b -> Event t c
 zipE f b e = fmap f b <@> e
@@ -38,7 +51,7 @@ pairWith f ea eb
   = filterJust
   $ fmap fini
   $ scanE acc (Nothing,Nothing)
-  $ fmap Left ea `union` fmap Right eb
+  $ joinE ea eb
   where
     acc (_,b) (Left  a) = (Just a, b)
     acc (a,_) (Right b) = (a, Just b)
@@ -46,3 +59,19 @@ pairWith f ea eb
 
 pairE :: Event t a -> Event t b -> Event t (a, b)
 pairE = pairWith (,)
+
+
+
+----------------------------------------------------------------
+-- Actimate variants
+----------------------------------------------------------------
+
+actimateWith :: (a -> IO ()) -> Event t a -> NetworkDescription t ()
+actimateWith f = reactimate . fmap f
+
+actimateWith_ :: IO () -> Event t a -> NetworkDescription t ()
+actimateWith_ f = reactimate . fmap (const f)
+
+actimateBhvWith :: (a -> IO ()) -> Behavior t a -> NetworkDescription t ()
+actimateBhvWith f bhv
+  = actimateWith f =<< changes bhv
