@@ -16,39 +16,35 @@ listWidget bhvXs = do
   -- Events
   (cmd,cmdEvt) <- addTclEvent
   xsEvt        <- eventChanges bhvXs
-  let lenEvt = length <$> xsEvt
-      evt    = listEvents xsEvt cmdEvt
+  let
+    -- Length of list
+    lenEvt = length <$> xsEvt
+    -- function to transform event
+    getEvents ixE = listEvents xsEvt $ cmdEvt `union` (JumpTo <$> ixE)
+
   ----------------------------------------
   -- Build UI
-  name <- frame [Fill FillX] $
+  frame [Fill FillX] $
     withPack PackLeft $ do
       spacer
-      --
       button [Text "<|" ] [] $ cmd  ToBegin
       button [Text "<<<"] [] $ cmd (MoveBack 10)
       button [Text "<"  ] [] $ cmd (MoveBack 1)
-      -- labels
+      --
       spacer
-      nm   <- label [ Width 10    ] []
-      _    <- label [ Text  " / " ] []
-      labN <- label []              []
-      frame [Expand True, Fill FillBoth] $ return ()
+      (_,evt) <- entryInt [] [] 0 getEvents
+      _       <- label [ Text  " / " ] []
+      labN    <- label []              []
+      spacer
       --
       button [Text ">"  ] [] $ cmd (MoveFwd  1)
       button [Text ">>>"] [] $ cmd (MoveFwd  10)
       button [Text "|>" ] [] $ cmd  ToEnd
-      --
       spacer
       -- Actions
       actimateTcl lenEvt $ do
         configure labN $ LamOpt $ Text . show
-      actimateTcl evt $ do
-        configure nm $ LamOpt $ \e ->
-          case e of
-            Just (i,_) -> Text $ show i
-            Nothing    -> Text "-"
-  -- Return data
-  return (name, filterJust evt)
+      return  evt
 
 
 
@@ -56,6 +52,7 @@ listWidget bhvXs = do
 data ListCmd
   = MoveFwd  Int
   | MoveBack Int
+  | JumpTo   Int
   | ToBegin
   | ToEnd
   deriving (Show)
@@ -67,10 +64,12 @@ data Cursor a
 instance Command ListCmd where
   encode (MoveFwd  n) = ["fwd",  show n]
   encode (MoveBack n) = ["back", show n]
+  encode (JumpTo   n) = ["jump", show n]
   encode  ToBegin     = ["begin"]
   encode  ToEnd       = ["end"]
-  decode ["fwd" , n]  = Just $ MoveFwd (read n)
-  decode ["back", n]  = Just $ MoveBack (read n)
+  decode ("fwd"  : n) = MoveFwd  <$> decode n
+  decode ("back" : n) = MoveBack <$> decode n
+  decode ("jump" : n) = JumpTo   <$> decode n
   decode ["begin"]    = Just   ToBegin
   decode ["end"]      = Just   ToEnd
   decode _            = Nothing
@@ -97,6 +96,7 @@ listEvents listEvt command
       case c of
         MoveFwd  d -> Cursor len xs $ clip len $ n + d
         MoveBack d -> Cursor len xs $ clip len $ n - d
+        JumpTo   d -> Cursor len xs $ clip len d
         ToBegin    -> Cursor len xs 0
         ToEnd      -> Cursor len xs $ len - 1
     -- Clip out of range indices
