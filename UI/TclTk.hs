@@ -5,7 +5,6 @@ module UI.TclTk (
   , set
     -- * Tk widgets
   , Widget(..)
-  , mkWidget
     -- ** Frame
   , frame
   , frame_
@@ -42,6 +41,7 @@ module UI.TclTk (
   ) where
 
 import Reactive.Banana
+import Reactive.Banana.Extra
 
 import UI.Command
 import UI.TclTk.AST
@@ -51,11 +51,10 @@ import UI.TclTk.Builder
 data Widget t a = Widget
   { widgetName     :: TkName
   , widgetEvent    :: Event t a
-  , widgetBehavior :: Behavior t a
+  , widgetInit     :: a
+  , widgetClosure  :: GUI t a ()
   }
 
-mkWidget :: TkName -> a -> Event t a -> Widget t a
-mkWidget nm x0 evt = Widget nm evt (stepper x0 evt)
 
 
 ----------------------------------------------------------------
@@ -140,7 +139,7 @@ checkbuttonGui opts packs st = do
                              , Name $ if f then "selected" else "!selected"
                              ]
                        ]
-  return $ mkWidget nm st evt
+  return $ Widget nm evt st (return ()) -- FIXME
 
 -- | Entry widget
 entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
@@ -148,8 +147,12 @@ entry opts packs
   = widget "ttk::entry" opts packs []
 
 -- | Entry which may hold space
-entryInt :: [Option p] -> [Pack] -> Int -> GUI t p (Widget t Int)
-entryInt opts packs n = do
+entryInt :: [Option p]          -- ^ Entry options
+         -> [Pack]              -- ^ Packing options
+         -> Int                 -- ^ Initial state
+         -> (Event t Int -> Event t (Maybe (Int,a)))
+         -> GUI t p (TkName, Event t (Int,a))
+entryInt opts packs n flt = do
   -- Widget
   nm <- entry opts packs
   -- Event
@@ -161,7 +164,7 @@ entryInt opts packs n = do
   set vCur  $ LitInt n
   set vBack $ LitStr ""
   configure nm $ TextVariable vCur
-  -- Bind
+  -- Bind event handler
   let call = [ Name "entry_validate_int"
              , Name pref
              , Name vCur
@@ -171,7 +174,18 @@ entryInt opts packs n = do
   bind nm "<KeyPress-Return>" $ Braces call
   -- Update
   stmt $ Stmt call
-  return $ mkWidget nm n evt
+  --
+  let fltEvt = flt evt
+      go x Nothing = x
+      go _ x       = x
+      callE  = filterJust
+             $ scanE go Nothing
+             $ fmap (fmap fst) fltEvt
+  -- let e = unions (evt : evts)
+  actimateTcl callE $ do
+    set vCur  $ LamE LitInt
+    set vBack $ LamE LitInt
+  return (nm, filterJust fltEvt)
 
 
 -- | Tk text area
