@@ -61,6 +61,16 @@ pairE :: Event t a -> Event t b -> Event t (a, b)
 pairE = pairWith (,)
 
 
+maybeEvent :: (Event t a -> Event t b) -> Event t (Maybe a) -> Event t (Maybe b)
+maybeEvent f e 
+  = unions [ fmap Just $ f $ filterJust e     -- Just case
+           , filterJust $ fmap nothingCase e  -- Nothing case
+           ]
+  where
+    nothingCase Nothing = Just Nothing
+    nothingCase _       = Nothing
+
+
 
 ----------------------------------------------------------------
 -- Actimate variants
