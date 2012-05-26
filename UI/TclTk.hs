@@ -4,7 +4,6 @@ module UI.TclTk (
     puts
   , set
     -- * Tk widgets
-  , Widget(..)
     -- ** Frame
   , frame
   , frame_
@@ -15,10 +14,8 @@ module UI.TclTk (
   , button
     -- ** Checkbutton
   , checkbutton
-  , checkbuttonGui
     -- ** Entry widgets
   , entry
-  , entryInt
     -- ** Text widget
   , textarea
   , textReplace
@@ -40,20 +37,9 @@ module UI.TclTk (
   , actimateIO
   ) where
 
-import Reactive.Banana
-import Reactive.Banana.Extra
-
 import UI.Command
 import UI.TclTk.AST
 import UI.TclTk.Builder
-
-
-data Widget t a = Widget
-  { widgetName     :: TkName
-  , widgetEvent    :: Event t a
-  , widgetInit     :: a
-  , widgetClosure  :: GUI t a ()
-  }
 
 
 
@@ -120,73 +106,10 @@ checkbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 checkbutton opts packs
   = widget "ttk::checkbutton" opts packs []
 
-checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool)
-checkbuttonGui opts packs st = do
-  nm <- checkbutton opts packs
-  -- Capture event
-  (cmd, evt) <- addTclEvent
-  let Cmd pref _ = cmd undefined
-  -- Set input handler
-  stmt $ Stmt [ Name    "checkbutton_event_toggle"
-              , Name    pref
-              , WName   nm
-              , LitBool st
-              ]
-  -- Set widget state on event
-  actimateTcl evt $ do
-    stmt $ Lam $ \f -> [Stmt [ WName nm
-                             , Name "state"
-                             , Name $ if f then "selected" else "!selected"
-                             ]
-                       ]
-  return $ Widget nm evt st (return ()) -- FIXME
-
 -- | Entry widget
 entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 entry opts packs
   = widget "ttk::entry" opts packs []
-
--- | Entry which may hold space
-entryInt :: [Option p]          -- ^ Entry options
-         -> [Pack]              -- ^ Packing options
-         -> Int                 -- ^ Initial state
-         -> (Event t Int -> Event t (Maybe (Int,a)))
-         -> GUI t p (TkName, Event t (Int,a))
-entryInt opts packs n flt = do
-  -- Widget
-  nm <- entry opts packs
-  -- Event
-  (cmd, evt) <- addTclEvent
-  let Cmd pref _ = cmd undefined
-  -- Set up variables
-  vCur  <- freshVar
-  vBack <- freshVar
-  set vCur  $ LitInt n
-  set vBack $ LitStr ""
-  configure nm $ TextVariable vCur
-  -- Bind event handler
-  let call = [ Name "entry_validate_int"
-             , Name pref
-             , Name vCur
-             , Name vBack
-             ]
-  bind nm "<Leave>"           $ Braces call
-  bind nm "<KeyPress-Return>" $ Braces call
-  -- Update
-  stmt $ Stmt call
-  --
-  let fltEvt = flt evt
-      go x Nothing = x
-      go _ x       = x
-      callE  = filterJust
-             $ scanE go Nothing
-             $ fmap (fmap fst) fltEvt
-  -- let e = unions (evt : evts)
-  actimateTcl callE $ do
-    set vCur  $ LamE LitInt
-    set vBack $ LamE LitInt
-  return (nm, filterJust fltEvt)
-
 
 -- | Tk text area
 textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName

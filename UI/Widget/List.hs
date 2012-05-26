@@ -8,6 +8,7 @@ import Reactive.Banana.Extra
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
+import UI.Widget
 import UI.Command
 
 
@@ -32,7 +33,7 @@ listWidget bhvXs = do
       button [Text "<"  ] [] $ cmd (MoveBack 1)
       --
       spacer
-      (_,evt) <- entryInt [] [] 0 getEvents
+      (_,evt) <- finiWidget . modifyWidgetM fst getEvents =<< entryInt [] [] 0
       _       <- label [ Text  " / " ] []
       labN    <- label []              []
       spacer
