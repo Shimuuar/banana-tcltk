@@ -50,5 +50,4 @@ proc checkbutton_event_toggle { pref n st } {
     if $st {
 	$n state selected
     }
-    puts [ concat $pref [ $n instate selected ] ]
 }

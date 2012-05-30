@@ -1,18 +1,21 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE RecordWildCards #-}
 module UI.Widget (
     Widget
   , filterWidget
+  , filterWidgetJust
   , modifyWidget
   , modifyWidgetM
   , finiWidget
-  -- , filterWidget
-  -- , modifyWidget
     -- * Composite widgets
   , checkbuttonGui
   , entryInt
   ) where
 
 import Control.Monad
+import Data.Maybe
 import Reactive.Banana
 import Reactive.Banana.Extra
 
@@ -25,52 +28,80 @@ import UI.TclTk.AST
 -- Widget
 ----------------------------------------------------------------
 
-data Widget t a = Widget {
-    widgetName      :: TkName     -- 
-  , widgetEvent     :: Event t (Maybe a)  -- 
-  -- , widgetBackEvent :: Event t (Maybe a)
-  , widgetSetState  :: GUI t a () -- 
-  }
+data Widget t a where
+  Widget :: Wgt t x a -> Widget t a
 
--- | Only accept outputs which satisfy predicate
 filterWidget :: (a -> Bool) -> Widget t a -> Widget t a
-filterWidget predicate w@(Widget{..}) =
-  w { widgetEvent = fmap (\e -> toMaybe predicate =<< e) widgetEvent
-    }
+filterWidget predicate (Widget w)
+  = Widget $ filterWgt predicate w
+
+filterWidgetJust :: Widget t (Maybe a) -> Widget t a
+filterWidgetJust (Widget w@Wgt{..})
+  = Widget $ w { wgtEvent = filterJust wgtEvent
+               , wgtBack  = wgtBack . Just
+               }
 
 modifyWidget :: (b -> a) -> (Event t a -> Event t b) -> Widget t a -> Widget t b
-modifyWidget back modify w@(Widget{..}) =
-  w { widgetEvent    = maybeEvent  modify widgetEvent
-    , widgetSetState = castBuilder back   widgetSetState
-    }
+modifyWidget back modify (Widget w)
+  = Widget $ modifyWgt back modify w
 
 modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t a -> Widget t b
-modifyWidgetM back modify w@(Widget{..}) =
-  w { widgetEvent    = fmap join $ maybeEvent  modify widgetEvent
-    , widgetSetState = castBuilder back   widgetSetState
-    }
+modifyWidgetM back modify (Widget w@(Wgt{..}))
+  = Widget $ w { wgtEvent = filterJust $ modify wgtEvent
+               , wgtBack  = wgtBack . back
+               }
 
 finiWidget :: Widget t a -> GUI t p (TkName, Event t a)
-finiWidget (Widget{..}) = do
-  actimateTcl (collectJusts widgetEvent) widgetSetState
-  return (widgetName, filterJust widgetEvent)
+finiWidget (Widget (Wgt{..})) = do
+  let valBehavior = stepper wgtInitalState $ wgtBack <$> wgtEvent
+      evt         = calm $ union (valBehavior <@  wgtUserInput)
+                                 (wgtBack     <$> wgtEvent    )
+  actimateTcl evt wgtActimate
+  return (wgtName,  wgtEvent)
 
 
-toMaybe :: (a -> Bool) -> a -> Maybe a
-toMaybe f x
-  | f x       = Just x
-  | otherwise = Nothing
+mkWidget :: TkName -> a -> Event t a -> GUI t a () -> Widget t a
+mkWidget nm x0 evt gui
+  = Widget $ Wgt
+    { wgtName        = nm
+    , wgtEvent       = evt
+    , wgtUserInput   = evt
+    , wgtInitalState = x0
+    , wgtBack        = id
+    , wgtActimate    = gui
+    }
 
-collectJusts :: Event t (Maybe a) -> Event t a
-collectJusts 
-  = filterJust . scanE acc Nothing
-  where
-    acc x Nothing = x
-    acc _ x       = x
 
 
 ----------------------------------------------------------------
---
+-- Worker
+----------------------------------------------------------------
+
+data Wgt t x a = Wgt
+  { wgtName        :: TkName
+  , wgtEvent       :: Event t a
+  , wgtUserInput   :: Event t x
+  , wgtInitalState :: x
+  , wgtBack        :: a -> x
+  , wgtActimate    :: GUI t x ()
+  }
+
+
+filterWgt :: (a -> Bool) -> Wgt t x a -> Wgt t x a
+filterWgt predicate w@(Wgt{..}) =
+  w { wgtEvent = filterE predicate wgtEvent
+    }
+
+modifyWgt :: (b -> a) -> (Event t a -> Event t b) -> Wgt t x a -> Wgt t x b
+modifyWgt back modify w@(Wgt{..}) =
+  w { wgtEvent = modify wgtEvent
+    , wgtBack  = wgtBack . back
+    }
+
+
+
+----------------------------------------------------------------
+-- Composite widgets
 ----------------------------------------------------------------
 
 
@@ -92,7 +123,7 @@ checkbuttonGui opts packs st = do
                                       , Name $ if f then "selected" else "!selected"
                                       ]
                                 ]
-  return $ Widget nm (fmap Just evt) call
+  return $ mkWidget nm st evt call
 
 
 -- | Entry which may hold space
@@ -110,7 +141,7 @@ entryInt opts packs n = do
   vCur  <- freshVar
   vBack <- freshVar
   set vCur  $ LitInt n
-  set vBack $ LitStr ""
+  set vBack $ LitInt n
   configure nm $ TextVariable vCur
   -- Bind event handler
   let call = [ Name "entry_validate_int"
@@ -121,10 +152,8 @@ entryInt opts packs n = do
   bind nm "<Leave>"             $ Braces call
   bind nm "<KeyPress-Return>"   $ Braces call
   bind nm "<KeyPress-KP_Enter>" $ Braces call
-  -- Update
-  stmt $ Stmt call
   --
   let tcl = do
         set vCur  $ LamE LitInt
         set vBack $ LamE LitInt
-  return $ Widget nm (fmap Just evt) tcl
+  return $ mkWidget nm n evt tcl
