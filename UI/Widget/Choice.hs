@@ -50,7 +50,7 @@ tabEvents n evt tabs
   = filterJust
   $ fmap select
   $ scanE go (Nothing,Nothing)
-  $ (Evt <$> evt)`union` (Tab <$> tabs)
+  $ (Evt <$> evt) `union` (Tab <$> tabs)
   where
     go (_,i) (Evt a) = (Just a, i)
     go (e,_) (Tab i) = (e, Just i)

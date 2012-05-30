@@ -25,6 +25,7 @@ module UI.TclTk.Builder (
   , initEvent
   , addTclEvent
   , actimateTcl
+  , actimateTclB
   , actimateIO
   ) where
 
@@ -217,6 +218,17 @@ actimateTcl evt command = do
   lift $ actimateWith (writeTclParam d tcl)
        $ filterJust
        $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt
+
+-- | Mirror behavior onto GUI
+actimateTclB :: Behavior t p
+             -> GUI t p ()       -- ^ Tcl program
+             -> GUI t q ()
+actimateTclB bhv command = do
+  (d,_) <- getParameter
+  tcl   <- closure command
+  evt   <- eventChanges bhv
+  lift $ actimateWith (writeTclParam d tcl) evt
+
 
 actimateIO :: Event t a
            -> (a -> IO ())

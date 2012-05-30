@@ -43,7 +43,7 @@ listWidget bhvXs = do
       button [Text "|>" ] [] $ cmd  ToEnd
       spacer
       -- Actions
-      actimateTcl lenEvt $ do
+      actimateTclB (length <$> bhvXs) $ do
         configure labN $ LamOpt $ Text . show
       return  evt
 

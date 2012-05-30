@@ -34,6 +34,7 @@ module UI.TclTk (
   , eventChanges
   , addTclEvent
   , actimateTcl
+  , actimateTclB
   , actimateIO
   ) where
 
