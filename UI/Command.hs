@@ -3,6 +3,7 @@ module UI.Command (
   , Cmd(..)
   ) where
 
+import Control.Applicative
 import Data.Char
 
 
@@ -24,16 +25,21 @@ instance Command () where
   decode _      = Nothing
 
 instance Command Integer where
-  encode i   = [show i]
-  decode [s] = case reads s of [(i,"")] -> Just i
-                               _        -> Nothing
-  decode _   = Nothing
+  encode = encodeRead
+  decode = decodeRead
 
 instance Command Int where
-  encode i   = [show i]
-  decode [s] = case reads s of [(i,"")] -> Just i
-                               _        -> Nothing
-  decode _   = Nothing
+  encode = encodeRead
+  decode = decodeRead
+
+instance Command Float where
+  encode = encodeRead
+  decode = decodeRead
+
+instance Command Double where
+  encode = encodeRead
+  decode = decodeRead
+
 
 instance Command Bool where
   encode True  = ["true" ]
@@ -46,3 +52,18 @@ instance Command Bool where
       "0"     -> Just False
       _       -> Nothing
   decode _ = Nothing
+
+
+
+----------------------------------------------------------------
+-- Helpers
+----------------------------------------------------------------
+
+encodeRead :: (Show a) => a -> [String]
+encodeRead = pure . show
+
+decodeRead :: Read a => [String] -> Maybe a
+decodeRead [s] =
+  case reads s of [(i,"")] -> Just i
+                  _        -> Nothing
+decodeRead _ = Nothing
