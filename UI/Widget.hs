@@ -31,25 +31,40 @@ import UI.TclTk.AST
 data Widget t a where
   Widget :: Wgt t x a -> Widget t a
 
+
+data Wgt t x a = Wgt
+  { wgtName        :: TkName
+  , wgtEvent       :: Event t a
+  , wgtUserInput   :: Event t x
+  , wgtInitalState :: x
+  , wgtBack        :: a -> x
+  , wgtActimate    :: GUI t x ()
+  }
+
+
+
 filterWidget :: (a -> Bool) -> Widget t a -> Widget t a
-filterWidget predicate (Widget w)
-  = Widget $ filterWgt predicate w
+filterWidget predicate (Widget w@Wgt{..})
+  = Widget w { wgtEvent = filterE predicate wgtEvent
+             }
 
 filterWidgetJust :: Widget t (Maybe a) -> Widget t a
 filterWidgetJust (Widget w@Wgt{..})
-  = Widget $ w { wgtEvent = filterJust wgtEvent
-               , wgtBack  = wgtBack . Just
-               }
+  = Widget w { wgtEvent = filterJust wgtEvent
+             , wgtBack  = wgtBack . Just
+             }
 
 modifyWidget :: (b -> a) -> (Event t a -> Event t b) -> Widget t a -> Widget t b
-modifyWidget back modify (Widget w)
-  = Widget $ modifyWgt back modify w
+modifyWidget back modify (Widget w@Wgt{..})
+  = Widget w { wgtEvent = modify wgtEvent
+             , wgtBack  = wgtBack . back
+             }
 
 modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t a -> Widget t b
 modifyWidgetM back modify (Widget w@(Wgt{..}))
-  = Widget $ w { wgtEvent = filterJust $ modify wgtEvent
-               , wgtBack  = wgtBack . back
-               }
+  = Widget w { wgtEvent = filterJust $ modify wgtEvent
+             , wgtBack  = wgtBack . back
+             }
 
 finiWidget :: Widget t a -> GUI t p (TkName, Event t a)
 finiWidget (Widget (Wgt{..})) = do
@@ -62,41 +77,14 @@ finiWidget (Widget (Wgt{..})) = do
 
 mkWidget :: TkName -> a -> Event t a -> GUI t a () -> Widget t a
 mkWidget nm x0 evt gui
-  = Widget $ Wgt
-    { wgtName        = nm
-    , wgtEvent       = evt
-    , wgtUserInput   = evt
-    , wgtInitalState = x0
-    , wgtBack        = id
-    , wgtActimate    = gui
-    }
-
-
-
-----------------------------------------------------------------
--- Worker
-----------------------------------------------------------------
-
-data Wgt t x a = Wgt
-  { wgtName        :: TkName
-  , wgtEvent       :: Event t a
-  , wgtUserInput   :: Event t x
-  , wgtInitalState :: x
-  , wgtBack        :: a -> x
-  , wgtActimate    :: GUI t x ()
-  }
-
-
-filterWgt :: (a -> Bool) -> Wgt t x a -> Wgt t x a
-filterWgt predicate w@(Wgt{..}) =
-  w { wgtEvent = filterE predicate wgtEvent
-    }
-
-modifyWgt :: (b -> a) -> (Event t a -> Event t b) -> Wgt t x a -> Wgt t x b
-modifyWgt back modify w@(Wgt{..}) =
-  w { wgtEvent = modify wgtEvent
-    , wgtBack  = wgtBack . back
-    }
+  = Widget Wgt
+      { wgtName        = nm
+      , wgtEvent       = evt
+      , wgtUserInput   = evt
+      , wgtInitalState = x0
+      , wgtBack        = id
+      , wgtActimate    = gui
+      }
 
 
 
