@@ -18,8 +18,6 @@ listWidget bhvXs = do
   (cmd,cmdEvt) <- addTclEvent
   xsEvt        <- eventChanges bhvXs
   let
-    -- Length of list
-    lenEvt = length <$> xsEvt
     -- function to transform event
     getEvents ixE = listEvents xsEvt $ cmdEvt `union` (JumpTo <$> ixE)
 

@@ -14,10 +14,7 @@ module UI.Widget (
   , entryInt
   ) where
 
-import Control.Monad
-import Data.Maybe
 import Reactive.Banana
-import Reactive.Banana.Extra
 
 import UI.Command
 import UI.TclTk
