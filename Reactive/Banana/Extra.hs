@@ -25,7 +25,7 @@ scanE2 fb fc a0 eb ec = scanE go a0 $ joinE ec eb
 
 
 injectModify :: Event t a -> Event t (a -> a) -> Event t a
-injectModify ea ef 
+injectModify ea ef
   = filterJust
   $ scanE acc Nothing
   $ joinE ea ef
@@ -33,7 +33,10 @@ injectModify ea ef
     acc _ (Left  a) = Just a
     acc a (Right f) = fmap f a
 
-
+addTicks :: Event t a -> Event t b -> Event t a
+addTicks ea eb
+  = filterJust
+  $ scanE2 (const Just) (\x _ -> x) Nothing ea eb
 
 ----------------------------------------------------------------
 -- Zips
@@ -62,7 +65,7 @@ pairE = pairWith (,)
 
 
 maybeEvent :: (Event t a -> Event t b) -> Event t (Maybe a) -> Event t (Maybe b)
-maybeEvent f e 
+maybeEvent f e
   = unions [ fmap Just $ f $ filterJust e     -- Just case
            , filterJust $ fmap nothingCase e  -- Nothing case
            ]
