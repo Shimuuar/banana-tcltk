@@ -28,63 +28,54 @@ import UI.TclTk.AST
 -- Widget
 ----------------------------------------------------------------
 
-data Widget t a where
-  Widget :: Wgt t x a -> Widget t a
-
-
-data Wgt t x a = Wgt
-  { wgtName        :: TkName
-  , wgtEvent       :: Event t a
-  , wgtUserInput   :: Event t x
-  , wgtInitalState :: x
-  , wgtBack        :: a -> x
-  , wgtActimate    :: GUI t x ()
+data Widget t s a = Widget
+  { wgtName        :: TkName     -- Name of widget
+  , wgtEvent       :: Event t a  -- Event for widget
+  , wgtUserInput   :: Event t () -- Occurs every time on user input
+  , wgtBack        :: a -> s
+  , wgtInitalState :: s          -- Initial state of widget
+  , wgtActimate    :: GUI t s () -- Send data to widget
   }
 
 
-
-filterWidget :: (a -> Bool) -> Widget t a -> Widget t a
-filterWidget predicate (Widget w@Wgt{..})
-  = Widget w { wgtEvent = filterE predicate wgtEvent
-             }
-
-filterWidgetJust :: Widget t (Maybe a) -> Widget t a
-filterWidgetJust (Widget w@Wgt{..})
-  = Widget w { wgtEvent = filterJust wgtEvent
-             , wgtBack  = wgtBack . Just
-             }
-
-modifyWidget :: (b -> a) -> (Event t a -> Event t b) -> Widget t a -> Widget t b
-modifyWidget back modify (Widget w@Wgt{..})
-  = Widget w { wgtEvent = modify wgtEvent
-             , wgtBack  = wgtBack . back
-             }
-
-modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t a -> Widget t b
-modifyWidgetM back modify (Widget w@(Wgt{..}))
-  = Widget w { wgtEvent = filterJust $ modify wgtEvent
-             , wgtBack  = wgtBack . back
-             }
-
-finiWidget :: Widget t a -> GUI t p (TkName, Event t a)
-finiWidget (Widget (Wgt{..})) = do
-  let valBehavior = stepper wgtInitalState $ wgtBack <$> wgtEvent
-      evt         = calm $ union (valBehavior <@  wgtUserInput)
-                                 (wgtBack     <$> wgtEvent    )
-  actimateTcl evt wgtActimate
-  return (wgtName,  wgtEvent)
-
-
-mkWidget :: TkName -> a -> Event t a -> GUI t a () -> Widget t a
-mkWidget nm x0 evt gui
-  = Widget Wgt
-      { wgtName        = nm
-      , wgtEvent       = evt
-      , wgtUserInput   = evt
-      , wgtInitalState = x0
-      , wgtBack        = id
-      , wgtActimate    = gui
+modifyWidget :: (b -> a) ->(Event t a -> Event t b) -> Widget t s a -> Widget t s b
+modifyWidget back modify w@(Widget{..}) 
+  = w { wgtEvent = modify wgtEvent 
+      , wgtBack  = wgtBack . back
       }
+
+filterWidget :: (a -> Bool) -> Widget t s a -> Widget t s a
+filterWidget predicate 
+  = modifyWidget id (filterE predicate)
+
+
+filterWidgetJust :: Widget t s (Maybe a) -> Widget t s a
+filterWidgetJust 
+  = modifyWidget Just filterJust
+
+modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t s a -> Widget t s b
+modifyWidgetM back modify w@(Widget{..})
+  = w { wgtEvent = filterJust $ modify wgtEvent 
+      , wgtBack  = wgtBack . back
+      }
+    
+finiWidget :: Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
+finiWidget (Widget{..}) = do
+  let valBhv = stepper wgtInitalState (wgtBack <$> wgtEvent)
+      evt    = calm $ union (valBhv  <@  wgtUserInput)
+                            (wgtBack <$> wgtEvent    )
+  actimateTcl evt wgtActimate
+  return (wgtName,  wgtEvent, valBhv)
+
+mkWidget :: TkName -> a -> Event t a -> GUI t a () -> Widget t a a
+mkWidget nm x0 evt gui
+  = Widget { wgtName        = nm
+           , wgtEvent       = evt
+           , wgtUserInput   = const () <$> evt
+           , wgtBack        = id
+           , wgtInitalState = x0
+           , wgtActimate    = gui
+           }
 
 
 
@@ -92,8 +83,7 @@ mkWidget nm x0 evt gui
 -- Composite widgets
 ----------------------------------------------------------------
 
-
-checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool)
+checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool Bool)
 checkbuttonGui opts packs st = do
   nm <- checkbutton opts packs
   -- Capture event
@@ -118,7 +108,7 @@ checkbuttonGui opts packs st = do
 entryInt :: [Option p]          -- ^ Entry options
          -> [Pack]              -- ^ Packing options
          -> Int                 -- ^ Initial state
-         -> GUI t p (Widget t Int)
+         -> GUI t p (Widget t Int Int)
 entryInt opts packs n = do
   -- Widget
   nm <- entry opts packs

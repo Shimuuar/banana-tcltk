@@ -33,7 +33,7 @@ listWidget bhvXs = do
       button [Text "<"  ] [] $ cmd (MoveBack 1)
       --
       spacer
-      (_,evt) <- finiWidget . modifyWidgetM fst getEvents =<< entryInt [] [] 0
+      (_,evt,_) <- finiWidget . modifyWidgetM fst getEvents =<< entryInt [] [] 0
       _       <- label [ Text  " / " ] []
       labN    <- label []              []
       spacer
@@ -45,7 +45,7 @@ listWidget bhvXs = do
       -- Actions
       actimateTclB (length <$> bhvXs) $ do
         configure labN $ LamOpt $ Text . show
-      return  evt
+      return evt
 
 
 
