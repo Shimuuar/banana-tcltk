@@ -10,7 +10,7 @@ module UI.Widget (
   , modifyWidgetM
   , finiWidget
     -- * Composite widgets
-  , checkbuttonGui
+  , checkbutton
   , entryInt
   ) where
 
@@ -83,9 +83,9 @@ mkWidget nm x0 evt gui
 -- Composite widgets
 ----------------------------------------------------------------
 
-checkbuttonGui :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool Bool)
-checkbuttonGui opts packs st = do
-  nm <- checkbutton opts packs
+checkbutton :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool Bool)
+checkbutton opts packs st = do
+  nm <- tclCheckbutton opts packs
   -- Capture event
   (cmd, evt) <- addTclEvent
   let Cmd pref _ = cmd undefined
@@ -111,7 +111,7 @@ entryInt :: [Option p]          -- ^ Entry options
          -> GUI t p (Widget t Int Int)
 entryInt opts packs n = do
   -- Widget
-  nm <- entry opts packs
+  nm <- tclEntry opts packs
   -- Event
   (cmd, evt) <- addTclEvent
   let Cmd pref _ = cmd undefined

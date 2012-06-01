@@ -13,9 +13,9 @@ module UI.TclTk (
     -- ** Button
   , button
     -- ** Checkbutton
-  , checkbutton
+  , tclCheckbutton
     -- ** Entry widgets
-  , entry
+  , tclEntry
     -- ** Text widget
   , textarea
   , textReplace
@@ -103,13 +103,13 @@ button opts packs cmd
       ]
 
 
-checkbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
-checkbutton opts packs
+tclCheckbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclCheckbutton opts packs
   = widget "ttk::checkbutton" opts packs []
 
 -- | Entry widget
-entry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
-entry opts packs
+tclEntry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclEntry opts packs
   = widget "ttk::entry" opts packs []
 
 -- | Tk text area
