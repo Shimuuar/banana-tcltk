@@ -7,8 +7,9 @@ module UI.TclTk.AST (
     -- ** Extra types
   , Option(..)
   , Pack(..)
-  , PackSide(..)
+  , PackAnchor(..)
   , PackFill(..)
+  , PackSide(..)
     -- * Rendering
   , renderTcl
   , renderTclParam
@@ -59,7 +60,19 @@ data Option a
 data Pack 
   = Side   PackSide
   | Fill   PackFill
+  | Anchor PackAnchor
   | Expand Bool
+
+data PackAnchor
+  = AnchorN
+  | AnchorNE
+  | AnchorE
+  | AnchorSE
+  | AnchorS
+  | AnchorSW
+  | AnchorW
+  | AnchorNW
+  | AnchorCenter
 
 data PackSide
   = PackTop
@@ -104,6 +117,17 @@ castFrom_ = cofmap (const ())
 
 -- | Convert packing options with 
 renderPack :: Pack -> [Expr a]
+renderPack (Anchor a) = [ Name "-anchor", Name anch ]
+  where anch = case a of
+                 AnchorN      -> "n"
+                 AnchorNE     -> "ne"
+                 AnchorE      -> "e"
+                 AnchorSE     -> "se"
+                 AnchorS      -> "s"
+                 AnchorSW     -> "sw"
+                 AnchorW      -> "w"
+                 AnchorNW     -> "nw"
+                 AnchorCenter -> "center"
 renderPack (Side s) = [ Name "-side", Name side ]
   where side = case s of
           PackTop    -> "top"
