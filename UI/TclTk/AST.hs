@@ -22,7 +22,10 @@ import Data.String
 
 
 
--- | Single Tcl statement/expression
+-- | Single Tcl statement/expression. It could be parametrized by
+--   value which is essential for callbacks. It's possible to wrap it
+--   into reader monad but it will force monadic notation which is not
+--   very convenient in this case.
 data Tcl a
   = Stmt [Expr a]               -- ^ Single statement
   | Lam  (a -> [Tcl a])
