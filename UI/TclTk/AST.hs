@@ -1,5 +1,14 @@
--- | Something that resemble Tcl AST.
+-- | 
+-- Not really Tcl AST. It's some small subset of Tcl/Tk which is used
+-- for emitting code.
+--
+-- Unusual feature is type parameter which many data types have. It's
+-- used to define callbacks. They depend on some haskell value and
+-- parameter is type of that value. Lambdas are defined as special
+-- constructors. It's certainl possible to wrap AST into reader monad
+-- but result deemed to unvieldy.
 module UI.TclTk.AST (
+    -- * AST
     Tcl(..)
   , Expr(..)
   , TkName(..)
@@ -13,6 +22,7 @@ module UI.TclTk.AST (
     -- * Rendering
   , renderTcl
   , renderTclParam
+    -- ** Convert to AST
   , renderPack
   , renderOption
   ) where
@@ -22,16 +32,14 @@ import Data.String
 
 
 
--- | Single Tcl statement/expression. It could be parametrized by
---   value which is essential for callbacks. It's possible to wrap it
---   into reader monad but it will force monadic notation which is not
---   very convenient in this case.
+-- | Single Tcl statement/expression.
 data Tcl a
   = Stmt [Expr a]               -- ^ Single statement
-  | Lam  (a -> [Tcl a])
+  | Lam  (a -> [Tcl a])         -- ^ Lambda expression
 
 -- | Tcl expression
 data Expr a
+  -- FIXME: LamE (a -> [Expr a]) ???
   = Name    String              -- ^ Simple name
   | WName   TkName              -- ^ Name of Tk widget
   | SubVar  String              -- ^ Variable substitution
@@ -42,12 +50,13 @@ data Expr a
   | LitBool Bool                -- ^ Literal boolen
 
   | Braces  [Expr a]            -- ^ Braces {...}
-  | BracesS [Tcl  a]            -- ^ Braces for statement
+  | BracesS [Tcl  a]            -- ^ Braces for statements
   | Eval    [Expr a]            -- ^ Square brackets
-  | LamE    (a -> Expr a)
-  | SeqE    [Expr a]
+  | LamE    (a -> Expr a)       -- ^ Lambda expression
+  | SeqE    [Expr a]            -- ^ Sequence of expressions
+    
 
--- | Name of Tk widgte
+-- | Name of Tk widgets
 newtype TkName = TkName [String]
 
 -- | Widget options
@@ -111,11 +120,63 @@ instance Cofunctor Expr where
 instance IsString (Expr a) where
   fromString = LitStr
 
+-- | Change type
 castFrom_ :: Cofunctor f => f () -> f b
 castFrom_ = cofmap (const ())
 
+
+
 ----------------------------------------------------------------
--- 
+-- Render Tcl to string
+----------------------------------------------------------------
+
+-- | Convert unparametrized Tcl to strings
+renderTcl :: Tcl () -> [String]
+renderTcl = workerTcl 0 ()
+
+-- | Convert parametrized Tcl to strings
+renderTclParam :: Tcl a -> a -> [String]
+renderTclParam tcl x = workerTcl 0 x tcl
+
+-- Convert Tcl code to strings
+workerTcl :: Int -> a -> Tcl a -> [String]
+workerTcl n x (Stmt es) = [pref n ++ unwords (map (renderExpr n x) es)]
+workerTcl n x (Lam lam) = workerTcl n x =<< lam x
+
+-- Convert Tcl expressions to strings
+renderExpr :: Int -> a -> Expr a -> String
+renderExpr _ _ (Name   s)           = s
+renderExpr _ _ (WName  (TkName ss)) = ('.':) =<< ss
+renderExpr _ _ (SubVar s)           = '$':s
+renderExpr n x (Eval   e) = "[ " ++ unwords (map (renderExpr n x) e) ++ " ]"
+renderExpr n x (Braces e) = "{ " ++ unwords (map (renderExpr n x) e) ++ " }"
+renderExpr n x (BracesS s) 
+  =  unlines
+  $  (pref n ++ "{")
+  :  concatMap (workerTcl (n+4) x) s
+  ++ [pref n ++ "{"]
+-- Literals
+renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
+  where
+    escape '"' = "\\\""
+    escape '$' = "\\$"
+    escape '[' = "\\["
+    escape ']' = "\\]"
+    escape  c  = [c]
+renderExpr _ _ (LitInt  i) = show i
+renderExpr _ _ (LitReal x) = show x
+renderExpr _ _ (LitBool b) = if b then "1" else "0"
+-- Lambda
+renderExpr n x (LamE lam)  = renderExpr n x (lam x)
+renderExpr n x (SeqE es )  = unwords $ map (renderExpr n x) es
+
+pref :: Int -> String
+pref n = replicate n ' '
+
+
+
+----------------------------------------------------------------
+-- Convert to AST
 ----------------------------------------------------------------
 
 -- | Convert packing options with 
@@ -153,48 +214,3 @@ renderOption (Height  n) = [Name "-height" , LitInt n]
 renderOption (Padding n) = [Name "-padding", LitInt n]
 renderOption (TextVariable v) = [ Name "-textvariable", Name v]
 renderOption (LamOpt  f) = [LamE $ SeqE . renderOption . f ]
-
-
-
-----------------------------------------------------------------
-
-renderTcl :: Tcl () -> [String]
-renderTcl = workerTcl 0 ()
-
-renderTclParam :: Tcl a -> a -> [String]
-renderTclParam tcl x = workerTcl 0 x tcl
-
--- | Render Tcl code to strings
-workerTcl :: Int -> a -> Tcl a -> [String]
-workerTcl n x (Stmt es) = [pref n ++ unwords (map (renderExpr n x) es)]
-workerTcl n x (Lam lam) = workerTcl n x =<< lam x
-
-
-renderExpr :: Int -> a -> Expr a -> String
-renderExpr _ _ (Name   s)           = s
-renderExpr _ _ (WName  (TkName ss)) = ('.':) =<< ss
-renderExpr _ _ (SubVar s)           = '$':s
-renderExpr n x (Eval   e) = "[ " ++ unwords (map (renderExpr n x) e) ++ " ]"
-renderExpr n x (Braces e) = "{ " ++ unwords (map (renderExpr n x) e) ++ " }"
-renderExpr n x (BracesS s) 
-  =  unlines
-  $  (pref n ++ "{")
-  :  concatMap (workerTcl (n+4) x) s
-  ++ [pref n ++ "{"]
--- Literals
-renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
-  where
-    escape '"' = "\\\""
-    escape '$' = "\\$"
-    escape '[' = "\\["
-    escape ']' = "\\]"
-    escape  c  = [c]
-renderExpr _ _ (LitInt  i) = show i
-renderExpr _ _ (LitReal x) = show x
-renderExpr _ _ (LitBool b) = if b then "1" else "0"
--- Lambda
-renderExpr n x (LamE lam)  = renderExpr n x (lam x)
-renderExpr n x (SeqE es )  = unwords $ map (renderExpr n x) es
-
-pref :: Int -> String
-pref n = replicate n ' '
