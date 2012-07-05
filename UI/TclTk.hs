@@ -16,6 +16,8 @@ module UI.TclTk (
     -- ** Text widget
   , textarea
   , textReplace
+    -- ** Notebook widget
+  , notebook
     -- ** Tk commands
   , pack
   , configure
@@ -34,6 +36,8 @@ module UI.TclTk (
   , actimateTclB
   , actimateIO
   ) where
+
+import Control.Monad      (forM_)
 
 import UI.Command
 import UI.TclTk.AST
@@ -110,6 +114,23 @@ textReplace nm str
                     ]
 
 
+-- | Notebook widget.
+notebook :: Monad m 
+         => [Option p] -> [Pack] 
+         -> [(String, TclBuilderT x p m TkName)]
+         -- ^ Function to generate list of widgets to insert
+         -> TclBuilderT x p m TkName
+notebook opts packs widgets = do
+  note <- widget "ttk::notebook" opts packs []
+  enterWidget note $
+    forM_ widgets $ \(title, mkWidget) -> do
+      n <- mkWidget
+      stmt $ Stmt [ WName note
+                  , Name  "add",   WName n
+                  , Name  "-text", LitStr title
+                  ]
+  return note
+
 
 ----------------------------------------------------------------
 -- Tk commands
@@ -143,6 +164,7 @@ disable nm flag
                 , Name $ if flag then "disabled" else "!disabled"
                 ]
 
+-- | Bind expressio to event.
 bind :: Monad m 
      => TkName                  -- ^ Widget name
      -> String                  -- ^ Tcl/Tk event name
