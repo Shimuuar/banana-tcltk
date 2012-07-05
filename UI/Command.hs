@@ -7,8 +7,11 @@ import Control.Applicative
 import Data.Char
 
 
--- | Type class for command which could be serialized and deserialized
---   strings
+-- | Since communication with Tcl goes through pipe commands which are
+--   sent and recieved must be serialized and deserialized. This type
+--   class provides exactrly this functionality.
+--
+--   FIXME: lexing of message is not implemented correctly.
 class Command a where
   encode :: a -> [String]
   decode :: [String] -> Maybe a
