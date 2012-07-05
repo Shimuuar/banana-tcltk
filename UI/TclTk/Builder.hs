@@ -51,7 +51,16 @@ import Paths_banana_tcltk
 -- Data types
 ----------------------------------------------------------------
 
--- | Monad transformer for building interface.
+-- | Monad transformer for building interface. It provides fresh name
+--   generation and accumulation of Tcl statements. Parameters have
+--   following meaning:
+-- 
+-- [@x@] Extra parameter which could be retrieved with 'getParameter'
+--       and set using 'addParameter'
+--
+-- [@p@] Parameter type of Tcl AST
+--
+-- FIXME: describe init event semantics.
 newtype TclBuilderT x p m a
   = TclBuilderT 
       (ReaderT (TclParam x)
@@ -112,6 +121,7 @@ runTclBuilderT (TclBuilderT m) x
        , payload     = x
        }
 
+-- | Execute GUI builder.
 runGUI :: ([String] -> IO ())       -- ^ Output function
        -> (forall t. GUI t () ())   -- ^ GUI
        -> IO (Dispatch, EventNetwork)
@@ -142,6 +152,7 @@ runGUI out gui = do
 -- Basic combinators
 ----------------------------------------------------------------
 
+-- | Change parameter type of Tcl AST.
 castBuilder :: Monad m => (q -> p) -> TclBuilderT x p m a -> TclBuilderT x q m a
 castBuilder f (TclBuilderT m)
   = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (cofmap f))) m
