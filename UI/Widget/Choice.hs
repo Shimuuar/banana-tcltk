@@ -3,7 +3,6 @@ module UI.Widget.Choice (
   ) where
 
 import Control.Applicative
-import Control.Monad
 
 import Reactive.Banana
 import Reactive.Banana.Extra
@@ -21,30 +20,26 @@ choiceWidget :: [(String, Event t a -> GUI t p TkName)] -- List of choices
 choiceWidget [] _ = return ()
 choiceWidget xs evt = do
   (cmd,idxEvt) <- addTclEvent
-  let Cmd pref _ = cmd undefined
+  let Cmd pref _ = cmd undefined -- FIXME: ugly!
   -- notebook widget
-  note   <- widget "ttk::notebook"
-              [] [Fill FillX] []
+  note <- notebook [] [Fill FillX] $
+    [ (title, gui $ tabEvents i evt idxEvt)
+    | (i, (title,gui)) <- zip [0::Int ..] xs 
+    ]
   -- Bind tab change event
   stmt $ Stmt [ Name  "notebook_event_tab"
               , Name  pref
               , WName note
               ]
-  -- Add child widgets
-  enterWidget note $ do
-    forM_ (zip [0::Int ..] xs) $ \(i,(title, gui)) -> do
-      wdgt <- gui $ tabEvents i evt idxEvt
-      stmt $ Stmt [ WName note
-                  , Name  "add"  , WName  wdgt
-                  , Name  "-text", LitStr title
-                  ]
 
 
 
+-- Sum of events. 
 data TabEvt a
-  = Evt a
-  | Tab Int
+  = Evt a                       -- Event
+  | Tab Int                     -- Tab change events.
 
+-- Fiter events which apply only for current tab
 tabEvents :: Int -> Event t a -> Event t Int -> Event t a
 tabEvents n evt tabs
   = filterJust
