@@ -1,11 +1,8 @@
 -- | Tck combinators
 module UI.TclTk (
-    -- * Basic tcl functions
-    puts
-  , set
     -- * Tk widgets
     -- ** Frame
-  , frame
+    frame
   , frame_
   , spacer
     -- ** Label
@@ -45,25 +42,10 @@ import UI.TclTk.Builder
 
 
 ----------------------------------------------------------------
--- Basic Tcl functions
-----------------------------------------------------------------
-
--- | puts
-puts :: Monad m => Expr p -> TclBuilderT x p m ()
-puts e
-  = stmt $ Stmt [Name "puts", e]
-
--- | Set variable
-set :: Monad m => String -> Expr p -> TclBuilderT x p m ()
-set nm expr = stmt $ Stmt [Name "set", Name nm, expr]
-
-
-
-----------------------------------------------------------------
 -- Tk widgets
 ----------------------------------------------------------------
 
--- | Tk frame widget used as container
+-- | Tk frame widget used as container.
 frame :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
 frame packs content = do
   nm <- widget "ttk::frame"
@@ -73,26 +55,27 @@ frame packs content = do
   x <- enterWidget nm content
   return (nm,x)
 
+-- | Tk frame which returns only name of frame.
 frame_ :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m TkName
 frame_ packs content = do
   (nm, _) <- frame packs content
   return nm
 
+-- | Empty frame which takes all available space.
 spacer :: Monad m => TclBuilderT x p m TkName
 spacer = frame_ [Expand True, Fill FillBoth]
        $ return ()
 
 
 
--- | Tk label
+-- | Tk label.
 label :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 label opts packs
   = widget "ttk::label" opts packs []
 
 
 
-
--- | Tk button
+-- | Tk button.
 button :: (Monad m, Command a) => [Option p] -> [Pack] -> Cmd a -> TclBuilderT x p m TkName
 button opts packs cmd
   = widget "ttk::button"
@@ -102,7 +85,7 @@ button opts packs cmd
       , Braces $ commandExpr cmd
       ]
 
-
+-- | Tk checkbutton
 tclCheckbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 tclCheckbutton opts packs
   = widget "ttk::checkbutton" opts packs []
@@ -112,11 +95,14 @@ tclEntry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 tclEntry opts packs
   = widget "ttk::entry" opts packs []
 
+
+
 -- | Tk text area
 textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
 textarea opts packs
   = widget "tk::text" opts packs []
 
+-- | Replace text in the text area
 textReplace :: Monad m => TkName -> Expr p -> TclBuilderT x p m ()
 textReplace nm str
   = stmt $ Stmt [ WName nm
@@ -129,7 +115,8 @@ textReplace nm str
 -- Tk commands
 ----------------------------------------------------------------
 
--- | Pack widget using current packing if not provides
+-- | Pack widget using current packing if it's not provided
+--   explicitly.
 pack :: Monad m => TkName -> [Pack] -> TclBuilderT x p m ()
 pack nm packs = do
   opts <- case [() | Side _ <- packs ] of
@@ -140,18 +127,27 @@ pack nm packs = do
                 , WName nm
                 ] ++ (renderPack =<< opts)
 
+-- | Set option for widget
 configure :: Monad m => TkName -> Option p -> TclBuilderT x p m ()
 configure nm opt
   = stmt $ Stmt $ WName nm : Name "configure" : renderOption opt
 
-disable :: Monad m => TkName -> Bool -> TclBuilderT x p m ()
+-- | Disable widget
+disable :: Monad m 
+        => TkName               -- ^ Widget name
+        -> Bool                 -- ^ @True@ - disable, @False@ - enable
+        -> TclBuilderT x p m ()
 disable nm flag
   = stmt $ Stmt [ WName nm
                 , Name "state"
                 , Name $ if flag then "disabled" else "!disabled"
                 ]
 
-bind :: Monad m => TkName -> String -> Expr p -> TclBuilderT x p m ()
+bind :: Monad m 
+     => TkName                  -- ^ Widget name
+     -> String                  -- ^ Tcl/Tk event name
+     -> Expr p                  -- ^ Callback to execute
+     -> TclBuilderT x p m ()
 bind nm evt expr
   = stmt $ Stmt [ Name  "bind"
                 , WName nm
@@ -179,7 +175,7 @@ commandExpr (Cmd pref action) =
 -- Helpers
 ----------------------------------------------------------------
 
--- | Create Tk widget
+-- | Generic function for creating Tk widget.
 widget :: Monad m
        => String                -- ^ Widget constructor
        -> [Option p]            -- ^ Options

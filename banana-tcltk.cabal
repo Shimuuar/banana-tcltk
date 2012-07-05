@@ -37,6 +37,7 @@ Library
     UI.Log
     UI.TclTk
     UI.TclTk.AST
+    UI.TclTk.Basic
     UI.TclTk.Builder
     UI.Widget
     UI.Widget.Choice
