@@ -18,8 +18,11 @@ import Reactive.Banana
 
 import UI.Command
 import UI.TclTk
-import UI.TclTk.Builder
 import UI.TclTk.AST
+import UI.TclTk.Basic
+import UI.TclTk.Builder
+
+
 
 ----------------------------------------------------------------
 -- Widget
