@@ -1,5 +1,5 @@
 Name:           banana-tcltk
-Version:        0.0.2
+Version:        0.0.3
 Synopsis:       FRP fr Tcl/Tk
 Description:
   FRP fr Tcl/Tk
@@ -29,6 +29,7 @@ Library
     reactive-banana == 0.6.*,
     mtl             >= 2,
     transformers    >= 0.2.2,
+    contravariant,
     ansi-wl-pprint
   Exposed-modules:
     UI.Command
@@ -43,6 +44,5 @@ Library
     UI.Widget.Choice
     UI.Widget.List
     Reactive.Banana.Extra
-    Control.Reactive.Cofunctor
   Other-modules:
     Paths_banana_tcltk

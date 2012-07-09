@@ -35,8 +35,8 @@ import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
-import Control.Reactive.Cofunctor
 
+import Data.Functor.Contravariant
 import Data.IORef
 
 import Reactive.Banana
@@ -155,7 +155,7 @@ runGUI out gui = do
 -- | Change parameter type of Tcl AST.
 castBuilder :: Monad m => (q -> p) -> TclBuilderT x p m a -> TclBuilderT x q m a
 castBuilder f (TclBuilderT m)
-  = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (cofmap f))) m
+  = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (contramap f))) m
 
 -- | Add single tcl statemetn
 stmt :: Monad m => Tcl p -> TclBuilderT x p m ()

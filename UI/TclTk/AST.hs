@@ -27,8 +27,8 @@ module UI.TclTk.AST (
   , renderOption
   ) where
 
-import Control.Reactive.Cofunctor
 import Data.String
+import Data.Functor.Contravariant
 
 
 
@@ -99,30 +99,30 @@ data PackFill
   | FillY
   | FillBoth
 
-instance Cofunctor Tcl where
-  cofmap f (Stmt es) = Stmt $ map (cofmap f) es
-  cofmap f (Lam  l ) = Lam  $ map (cofmap f) . l . f
+instance Contravariant Tcl where
+  contramap f (Stmt es) = Stmt $ map (contramap f) es
+  contramap f (Lam  l ) = Lam  $ map (contramap f) . l . f
 
-instance Cofunctor Expr where
-  cofmap _ (Name    s) = Name   s
-  cofmap _ (WName   s) = WName  s
-  cofmap _ (SubVar  s) = SubVar s
-  cofmap f (Eval    e) = Eval    $ map (cofmap f) e
-  cofmap f (Braces  e) = Braces  $ map (cofmap f) e
-  cofmap f (BracesS s) = BracesS $ map (cofmap f) s
-  cofmap _ (LitStr  s) = LitStr  s
-  cofmap _ (LitInt  i) = LitInt  i
-  cofmap _ (LitReal x) = LitReal x
-  cofmap _ (LitBool x) = LitBool x
-  cofmap f (LamE lam)  = LamE $ cofmap f . lam . f
-  cofmap f (SeqE es )  = SeqE $ map (cofmap f) es
+instance Contravariant Expr where
+  contramap _ (Name    s) = Name   s
+  contramap _ (WName   s) = WName  s
+  contramap _ (SubVar  s) = SubVar s
+  contramap f (Eval    e) = Eval    $ map (contramap f) e
+  contramap f (Braces  e) = Braces  $ map (contramap f) e
+  contramap f (BracesS s) = BracesS $ map (contramap f) s
+  contramap _ (LitStr  s) = LitStr  s
+  contramap _ (LitInt  i) = LitInt  i
+  contramap _ (LitReal x) = LitReal x
+  contramap _ (LitBool x) = LitBool x
+  contramap f (LamE lam)  = LamE $ contramap f . lam . f
+  contramap f (SeqE es )  = SeqE $ map (contramap f) es
   
 instance IsString (Expr a) where
   fromString = LitStr
 
 -- | Change type
-castFrom_ :: Cofunctor f => f () -> f b
-castFrom_ = cofmap (const ())
+castFrom_ :: Contravariant f => f () -> f b
+castFrom_ = contramap (const ())
 
 
 
