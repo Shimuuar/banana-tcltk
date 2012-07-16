@@ -210,6 +210,7 @@ closure (TclBuilderT m) =
     (_,w) <- lift $ lift $ runWriterT $ runReaderT m par
     return w
 
+-- | Register event
 addTclEvent :: Command a => GUI t p (a -> Cmd a, Event t a)
 addTclEvent = do
   pref     <- uniqString "EVT_"
@@ -218,9 +219,13 @@ addTclEvent = do
   evt      <- lift $ fromAddHandler register
   return (Cmd pref, evt)
 
--- | Send Tcl in responce to event
+-- | Send Tcl commands in responce to event which changes GUI state.
+--
+--   IMPORTANT: command must be idempotent because event might be
+--      resent if another GUI is attached to process.  Consult
+--      'UI.Dispatch' for details.
 actimateTcl :: Event t p        -- ^ Event
-            -> GUI t p ()       -- ^ Tcl program
+            -> GUI t p ()       -- ^ Tcl commands
             -> GUI t q ()
 actimateTcl evt command = do
   (d,_) <- getParameter
@@ -230,9 +235,9 @@ actimateTcl evt command = do
        $ filterJust
        $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt
 
--- | Mirror behavior onto GUI
+-- | Mirror behavior onto GUI. Check note on 'actimateTcl'.
 actimateTclB :: Behavior t p
-             -> GUI t p ()       -- ^ Tcl program
+             -> GUI t p ()       -- ^ Tcl commands
              -> GUI t q ()
 actimateTclB bhv command = do
   (d,_) <- getParameter
@@ -240,19 +245,23 @@ actimateTclB bhv command = do
   evt   <- eventChanges bhv
   lift $ actimateWith (writeTclParam d tcl) evt
 
-
+-- | Execute IO action in responce to event.
 actimateIO :: Event t a
            -> (a -> IO ())
            -> GUI t p ()
 actimateIO evt action =
   lift $ actimateWith action evt
 
+-- | Changes of behavior. This function is similar to 'changes' but
+--   events are generated not only when behavior changes but also when
+--   GUI is attached.
 eventChanges :: Behavior t a -> GUI t p (Event t a)
 eventChanges bhv = do
   initEvt <- initEvent
   evt     <- lift $ changes bhv
   return $ (bhv <@ initEvt) `union` evt
 
+-- | Generated when GUI is attached
 initEvent :: GUI t p (Event t ())
 initEvent = snd <$> getParameter
 
