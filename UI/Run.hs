@@ -38,7 +38,7 @@ runGuiInSubprocess ui
       (dispatch, network) <- runGUI (output inp) ui
       forkIO $
         mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
-      -- Send stderr to stderr
+      -- Send stderr to logger
       forkIO $
         mapM_ logStr . lines =<< hGetContents err
       -- Start event loop

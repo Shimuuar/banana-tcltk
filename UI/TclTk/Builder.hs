@@ -126,7 +126,7 @@ runGUI :: ([String] -> IO ())       -- ^ Output function
        -> (forall t. GUI t () ())   -- ^ GUI
        -> IO (Dispatch, EventNetwork)
 runGUI out gui = do
-  -- IORef for smuggling Tcl code from monad
+  -- IORef for smuggling Tcl code from NetworkDescription monad
   tclRef   <- newIORef []
   -- Set up dispatch
   dispatch         <- newDispatch
@@ -135,7 +135,7 @@ runGUI out gui = do
   setPushInit dispatch (push ())
   -- Send library code
   out . pure =<< readFile =<< getDataFileName "tcl-bits/banana.tcl"
-  -- Network
+  -- Build NetworkDescription
   let network = do 
         (_,tcl) <- flip runTclBuilderT () $ do
           initEvt <- lift $ fromAddHandler register
