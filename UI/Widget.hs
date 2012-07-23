@@ -28,37 +28,19 @@ import UI.TclTk.Builder
 -- Widget
 ----------------------------------------------------------------
 
+-- | Widgets are as name suggest GUI widgets. In addition to being
+--   widgets they have associated behaviour and events which fire when
+--   their value change.
 data Widget t s a = Widget
-  { wgtName        :: TkName     -- Name of widget
+  { wgtName        :: TkName     -- Tcl/Tk name of widget
   , wgtEvent       :: Event t a  -- Event for widget
   , wgtUserInput   :: Event t () -- Occurs every time on user input
-  , wgtBack        :: a -> s
+  , wgtBack        :: a -> s     -- Transform current state to base state
   , wgtInitalState :: s          -- Initial state of widget
   , wgtActimate    :: GUI t s () -- Send data to widget
   }
 
-
-modifyWidget :: (b -> a) ->(Event t a -> Event t b) -> Widget t s a -> Widget t s b
-modifyWidget back modify w@(Widget{..}) 
-  = w { wgtEvent = modify wgtEvent 
-      , wgtBack  = wgtBack . back
-      }
-
-filterWidget :: (a -> Bool) -> Widget t s a -> Widget t s a
-filterWidget predicate 
-  = modifyWidget id (filterE predicate)
-
-
-filterWidgetJust :: Widget t s (Maybe a) -> Widget t s a
-filterWidgetJust 
-  = modifyWidget Just filterJust
-
-modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t s a -> Widget t s b
-modifyWidgetM back modify w@(Widget{..})
-  = w { wgtEvent = filterJust $ modify wgtEvent 
-      , wgtBack  = wgtBack . back
-      }
-    
+-- | Run widget.
 finiWidget :: Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
 finiWidget (Widget{..}) = do
   let valBhv = stepper wgtInitalState (wgtBack <$> wgtEvent)
@@ -67,7 +49,41 @@ finiWidget (Widget{..}) = do
   actimateTcl evt wgtActimate
   return (wgtName,  wgtEvent, valBhv)
 
-mkWidget :: TkName -> a -> Event t a -> GUI t a () -> Widget t a a
+
+
+-- | Modify/filter events produced by widget.
+modifyWidget :: (b -> a)                 -- ^ Transform value of new type back 
+             -> (Event t a -> Event t b) -- ^ Filter and/or modify events produced by widget
+             -> Widget t s a             -- ^ Old widget
+             -> Widget t s b
+modifyWidget back modify w@(Widget{..}) 
+  = w { wgtEvent = modify wgtEvent 
+      , wgtBack  = wgtBack . back
+      }
+
+-- | Analogous to 'modifyWidget' which discards 'Nothing' events.
+modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t s a -> Widget t s b
+modifyWidgetM back modify w@(Widget{..})
+  = w { wgtEvent = filterJust $ modify wgtEvent 
+      , wgtBack  = wgtBack . back
+      }
+
+-- | Filter events produced by widget.
+filterWidget :: (a -> Bool) -> Widget t s a -> Widget t s a
+filterWidget predicate 
+  = modifyWidget id (filterE predicate)
+
+-- | Another variant of filter.
+filterWidgetJust :: Widget t s (Maybe a) -> Widget t s a
+filterWidgetJust 
+  = modifyWidget Just filterJust
+
+-- | Create widget.
+mkWidget :: TkName              -- ^ Widget name
+         -> a                   -- ^ Initial value
+         -> Event t a           -- ^ Events produced by widget
+         -> GUI t a ()          -- ^ Tcl code which could produce widget
+         -> Widget t a a
 mkWidget nm x0 evt gui
   = Widget { wgtName        = nm
            , wgtEvent       = evt
@@ -83,7 +99,11 @@ mkWidget nm x0 evt gui
 -- Composite widgets
 ----------------------------------------------------------------
 
-checkbutton :: [Option p] -> [Pack] -> Bool -> GUI t p (Widget t Bool Bool)
+-- | Checkbutton
+checkbutton :: [Option p]       -- ^ GUI options
+            -> [Pack]           -- ^ Packing options
+            -> Bool             -- ^ Initial state
+            -> GUI t p (Widget t Bool Bool)
 checkbutton opts packs st = do
   nm <- tclCheckbutton opts packs
   -- Capture event
@@ -104,7 +124,7 @@ checkbutton opts packs st = do
   return $ mkWidget nm st evt call
 
 
--- | Entry which may hold space
+-- | Text entry which may hold integer numbers.
 entryInt :: [Option p]          -- ^ Entry options
          -> [Pack]              -- ^ Packing options
          -> Int                 -- ^ Initial state
