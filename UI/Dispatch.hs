@@ -7,7 +7,7 @@ module UI.Dispatch (
   , registerEvent
   , pushInitEvent
   , pushMessage
-    -- * 
+    -- *
   , writeTcl
   , writeTclParam
   ) where
@@ -73,7 +73,7 @@ setOutput (Dispatch s) out = do
 pushInitEvent :: Dispatch -> IO ()
 pushInitEvent (Dispatch s) =
   pushInit =<< readIORef s
- 
+
 
 -- | Dispatch incoming event
 pushMessage :: Dispatch -> [String] -> IO ()
@@ -88,7 +88,7 @@ pushMessage (Dispatch s) (key:msg) = do
 
 -- | Register event in the dispatch table. This function is not meant
 --   to be used directly. Use 'addTclEvent' instead.
-registerEvent :: (Command a) 
+registerEvent :: (Command a)
               => Dispatch       -- ^ Dispatch table
               -> String         -- ^ Unique event prefix.
               -> NetworkDescription t (AddHandler a)
@@ -97,15 +97,13 @@ registerEvent (Dispatch s) pref = do
   (register, run) <- liftIO  newAddHandler
   let action str =
         case decode str of
-          Just x  -> do
-            -- putStrLn $ "Decoded event: " ++ show x
-            run x
+          Just x  -> run x
           Nothing -> return ()
   liftIO $ writeIORef s $ src { eventDispatch = Map.insert pref action (eventDispatch src) }
   return register
-  
 
-  
+
+
 ----------------------------------------------------------------
 -- Output
 ----------------------------------------------------------------
@@ -114,7 +112,7 @@ registerEvent (Dispatch s) pref = do
 writeTcl :: Dispatch -> [Tcl ()] -> IO ()
 writeTcl s tcl = writeTclParam s tcl ()
 
--- | Write parametrized  tcl commands to output
+-- | Write parametrized Tcl commands to output
 writeTclParam :: Dispatch -> [Tcl p] -> p -> IO ()
 writeTclParam (Dispatch s) tcl p = do
   out <- outputMessage <$> readIORef s

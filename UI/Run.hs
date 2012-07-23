@@ -19,11 +19,7 @@ import UI.Log
 import Text.PrettyPrint.ANSI.Leijen
 
 
-
--- FIXME:
---  This function is incorrect
---    1. It leaves zombies around         [Double fork]
---    2. Reader thread is not terminated  [Kill it]
+-- | Run GUI. Tcl interpreter will be executed in subprocess
 runGuiInSubprocess :: (forall t. GUI t () ()) -> IO ()
 runGuiInSubprocess ui
   = bracket
@@ -50,7 +46,7 @@ runGuiInSubprocess ui
       pushInitEvent dispatch
       void $ waitForProcess pid
 
-    -- Finalization
+    -- Wait for subprocess
     finalize (_,_,_, pid) = do
       c <- getProcessExitCode pid
       case c of
