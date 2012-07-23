@@ -10,7 +10,6 @@ import Reactive.Banana.Extra
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Builder
-import UI.Command
 
 
 
@@ -19,8 +18,7 @@ choiceWidget :: [(String, Event t a -> GUI t p TkName)] -- List of choices
              -> GUI t p ()
 choiceWidget [] _ = return ()
 choiceWidget xs evt = do
-  (cmd,idxEvt) <- addTclEvent
-  let Cmd pref _ = cmd undefined -- FIXME: ugly!
+  (pref,idxEvt) <- addTclEvent
   -- notebook widget
   note <- notebook [] [Fill FillX] $
     [ (title, gui $ tabEvents i evt idxEvt)
@@ -28,7 +26,7 @@ choiceWidget xs evt = do
     ]
   -- Bind tab change event
   stmt $ Stmt [ Name  "notebook_event_tab"
-              , Name  pref
+              , Name  (getEvtPrefix pref)
               , WName note
               ]
 

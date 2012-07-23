@@ -16,7 +16,6 @@ module UI.Widget (
 
 import Reactive.Banana
 
-import UI.Command
 import UI.TclTk
 import UI.TclTk.AST
 import UI.TclTk.Basic
@@ -107,11 +106,10 @@ checkbutton :: [Option p]       -- ^ GUI options
 checkbutton opts packs st = do
   nm <- tclCheckbutton opts packs
   -- Capture event
-  (cmd, evt) <- addTclEvent
-  let Cmd pref _ = cmd undefined
+  (pref, evt) <- addTclEvent
   -- Set input handler
   stmt $ Stmt [ Name    "checkbutton_event_toggle"
-              , Name    pref
+              , Name    (getEvtPrefix pref)
               , WName   nm
               , LitBool st
               ]
@@ -133,8 +131,7 @@ entryInt opts packs n = do
   -- Widget
   nm <- tclEntry opts packs
   -- Event
-  (cmd, evt) <- addTclEvent
-  let Cmd pref _ = cmd undefined
+  (pref, evt) <- addTclEvent
   -- Set up variables
   vCur  <- freshVar
   vBack <- freshVar
@@ -143,7 +140,7 @@ entryInt opts packs n = do
   configure nm $ TextVariable vCur
   -- Bind event handler
   let call = [ Name "entry_validate_int"
-             , Name pref
+             , Name (getEvtPrefix pref)
              , Name vCur
              , Name vBack
              ]

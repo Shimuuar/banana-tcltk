@@ -180,20 +180,6 @@ bind nm evt expr
 
 
 ----------------------------------------------------------------
--- Callbacks
-----------------------------------------------------------------
-
-commandExpr :: Command a => Cmd a -> [Expr p]
-commandExpr (Cmd pref action) =
-  [ Name "puts"
-  , LitStr command
-  ]
-  where
-    command = unwords $ pref : encode action
-
-
-
-----------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------
 

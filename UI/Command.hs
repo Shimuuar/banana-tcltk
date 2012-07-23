@@ -1,6 +1,5 @@
 module UI.Command (
     Command(..)
-  , Cmd(..)
   ) where
 
 import Control.Applicative
@@ -16,11 +15,11 @@ class Command a where
   encode :: a -> [String]
   decode :: [String] -> Maybe a
 
-data Cmd a = Cmd
-  { cmdPrexif :: String
-  , cmdValue  :: a
-  }
 
+
+----------------------------------------------------------------
+-- Instances
+----------------------------------------------------------------
 
 instance Command () where
   encode _      = ["()"]

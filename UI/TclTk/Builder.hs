@@ -19,14 +19,18 @@ module UI.TclTk.Builder (
   , enterWidget
   , withPack
   , askPacking
-    -- ** FRP bits
-  , closure
-  , eventChanges
-  , initEvent
+    -- * Events
+  , EvtPrefix(getEvtPrefix)
+  , Cmd(..)
   , addTclEvent
+  , initEvent
+  , eventChanges
+    -- ** Actimate events
   , actimateTcl
   , actimateTclB
   , actimateIO
+  , closure
+  , commandExpr
   ) where
 
 import Control.Arrow
@@ -201,23 +205,43 @@ getParameter = liftM payload askParam
 askPacking :: Monad m => TclBuilderT x p m PackSide
 askPacking = liftM currentPack askParam
 
--- | Generate Tcl code
-closure :: Monad m => TclBuilderT x p m () -> TclBuilderT x q m [Tcl p]
-closure (TclBuilderT m) =
-  TclBuilderT $ do
-    -- FIXME: should path be resetted
-    par   <- ask
-    (_,w) <- lift $ lift $ runWriterT $ runReaderT m par
-    return w
 
--- | Register event
-addTclEvent :: Command a => GUI t p (a -> Cmd a, Event t a)
+----------------------------------------------------------------
+-- Events
+----------------------------------------------------------------
+
+-- | Unique event prefix which should be used in the event callbacks
+newtype EvtPrefix a = EvtPrefix { getEvtPrefix :: String }
+
+-- | Command which could be sent back.
+data Cmd a = Cmd
+  { cmdPrexif :: EvtPrefix a
+  , cmdValue  :: a
+  }
+
+-- | Register new event. Returns unique event prefix and event.
+addTclEvent :: Command a => GUI t p (EvtPrefix a, Event t a)
 addTclEvent = do
   pref     <- uniqString "EVT_"
   (d,_)    <- getParameter
   register <- lift $ registerEvent d pref
   evt      <- lift $ fromAddHandler register
-  return (Cmd pref, evt)
+  return (EvtPrefix pref, evt)
+
+-- | Generated when GUI is attached.
+initEvent :: GUI t p (Event t ())
+initEvent = snd <$> getParameter
+
+-- | Changes of behavior. This function is similar to 'changes' but
+--   events are generated not only when behavior changes but also when
+--   GUI is attached.
+eventChanges :: Behavior t a -> GUI t p (Event t a)
+eventChanges bhv = do
+  initEvt <- initEvent
+  evt     <- lift $ changes bhv
+  return $ (bhv <@ initEvt) `union` evt
+
+
 
 -- | Send Tcl commands in responce to event which changes GUI state.
 --
@@ -252,18 +276,24 @@ actimateIO :: Event t a
 actimateIO evt action =
   lift $ actimateWith action evt
 
--- | Changes of behavior. This function is similar to 'changes' but
---   events are generated not only when behavior changes but also when
---   GUI is attached.
-eventChanges :: Behavior t a -> GUI t p (Event t a)
-eventChanges bhv = do
-  initEvt <- initEvent
-  evt     <- lift $ changes bhv
-  return $ (bhv <@ initEvt) `union` evt
 
--- | Generated when GUI is attached
-initEvent :: GUI t p (Event t ())
-initEvent = snd <$> getParameter
+-- | Generate parametrized Tcl code.
+closure :: Monad m => TclBuilderT x p m () -> TclBuilderT x q m [Tcl p]
+closure (TclBuilderT m) =
+  TclBuilderT $ do
+    -- FIXME: should path be resetted
+    par   <- ask
+    (_,w) <- lift $ lift $ runWriterT $ runReaderT m par
+    return w
+
+-- | Comvert command to parametrized Tcl expression.
+commandExpr :: Command a => Cmd a -> [Expr p]
+commandExpr (Cmd (EvtPrefix pref) action) =
+  [ Name "puts"
+  , LitStr command
+  ]
+  where
+    command = unwords $ pref : encode action
 
 
 

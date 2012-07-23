@@ -15,9 +15,10 @@ import UI.Command
 listWidget :: Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
 listWidget bhvXs = do
   -- Events
-  (cmd,cmdEvt) <- addTclEvent
-  xsEvt        <- eventChanges bhvXs
+  (pref,cmdEvt) <- addTclEvent
+  xsEvt         <- eventChanges bhvXs
   let
+    cmd = Cmd pref
     -- function to transform event
     getEvents ixE = listEvents xsEvt $ cmdEvt `union` (JumpTo <$> ixE)
 
