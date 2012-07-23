@@ -2,8 +2,11 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module UI.Widget (
     Widget
+  , EB(..)
+  , toEB
   , filterWidget
   , filterWidgetJust
   , modifyWidget
@@ -39,6 +42,14 @@ data Widget t s a = Widget
   , wgtActimate    :: GUI t s () -- Send data to widget
   }
 
+-- | Event and its corresponding behaviour.
+data EB t a = EB (Event t a) (Behavior t a)
+
+-- | Convert widget finalization result to the 'EB' data
+toEB :: (x, Event t a, Behavior t a) -> EB t a
+toEB (_,e,b) = EB e b
+
+
 -- | Run widget.
 finiWidget :: Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
 finiWidget (Widget{..}) = do
@@ -51,30 +62,30 @@ finiWidget (Widget{..}) = do
 
 
 -- | Modify/filter events produced by widget.
-modifyWidget :: (b -> a)                 -- ^ Transform value of new type back 
+modifyWidget :: (b -> a)                 -- ^ Transform value of new type back
              -> (Event t a -> Event t b) -- ^ Filter and/or modify events produced by widget
              -> Widget t s a             -- ^ Old widget
              -> Widget t s b
-modifyWidget back modify w@(Widget{..}) 
-  = w { wgtEvent = modify wgtEvent 
+modifyWidget back modify w@(Widget{..})
+  = w { wgtEvent = modify wgtEvent
       , wgtBack  = wgtBack . back
       }
 
 -- | Analogous to 'modifyWidget' which discards 'Nothing' events.
 modifyWidgetM :: (b -> a) -> (Event t a -> Event t (Maybe b)) -> Widget t s a -> Widget t s b
 modifyWidgetM back modify w@(Widget{..})
-  = w { wgtEvent = filterJust $ modify wgtEvent 
+  = w { wgtEvent = filterJust $ modify wgtEvent
       , wgtBack  = wgtBack . back
       }
 
 -- | Filter events produced by widget.
 filterWidget :: (a -> Bool) -> Widget t s a -> Widget t s a
-filterWidget predicate 
+filterWidget predicate
   = modifyWidget id (filterE predicate)
 
 -- | Another variant of filter.
 filterWidgetJust :: Widget t s (Maybe a) -> Widget t s a
-filterWidgetJust 
+filterWidgetJust
   = modifyWidget Just filterJust
 
 -- | Create widget.
@@ -91,6 +102,27 @@ mkWidget nm x0 evt gui
            , wgtInitalState = x0
            , wgtActimate    = gui
            }
+
+----------------------------------------------------------------
+-- Instances
+----------------------------------------------------------------
+
+instance Functor (EB t) where
+  fmap f (EB e b) = EB (fmap f e) (fmap f b)
+
+instance Apply (EB t) (EB t) where
+  EB e1 b1 <@> EB e2 b2 =
+    EB (union (b1 <@> e2)
+              (flip ($) <$> b2 <@> e1))
+       (b1 <*> b2)
+
+instance Apply (EB t) (Event t) where
+  EB e b <@> evt =
+    union
+      (b <@> evt)
+      (filterJust $ flip fmap <$> bhv <@> e)
+    where
+      bhv = stepper Nothing (Just <$> evt)
 
 
 
