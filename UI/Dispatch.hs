@@ -7,7 +7,8 @@ module UI.Dispatch (
   , registerEvent
   , pushInitEvent
   , pushMessage
-    -- *
+    -- * Write data
+  , writeRenderedTcl
   , writeTcl
   , writeTclParam
   ) where
@@ -108,12 +109,18 @@ registerEvent (Dispatch s) pref = do
 -- Output
 ----------------------------------------------------------------
 
+-- | Write raw code
+writeRenderedTcl :: Dispatch -> [String] -> IO ()
+writeRenderedTcl (Dispatch s) strs = do
+  out <- outputMessage <$> readIORef s
+  out strs
+
 -- | Write tcl commands
 writeTcl :: Dispatch -> [Tcl ()] -> IO ()
-writeTcl s tcl = writeTclParam s tcl ()
+writeTcl s tcl
+  = writeTclParam s tcl ()
 
 -- | Write parametrized Tcl commands to output
 writeTclParam :: Dispatch -> [Tcl p] -> p -> IO ()
-writeTclParam (Dispatch s) tcl p = do
-  out <- outputMessage <$> readIORef s
-  out $ flip renderTclParam p =<< tcl
+writeTclParam s tcl p
+  = writeRenderedTcl s $ flip renderTclParam p =<< tcl

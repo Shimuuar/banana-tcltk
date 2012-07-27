@@ -125,10 +125,10 @@ runTclBuilderT (TclBuilderT m) x
        , payload     = x
        }
 
--- | Execute GUI builder.
+-- | Execute GUI builder. It creates dispatch, event network and Tcl code
 runGUI :: ([String] -> IO ())       -- ^ Output function
        -> (forall t. GUI t () ())   -- ^ GUI
-       -> IO (Dispatch, EventNetwork)
+       -> IO (Dispatch, EventNetwork, [String])
 runGUI out gui = do
   -- IORef for smuggling Tcl code from NetworkDescription monad
   tclRef   <- newIORef []
@@ -138,7 +138,6 @@ runGUI out gui = do
   setOutput   dispatch  out
   setPushInit dispatch (push ())
   -- Send library code
-  out . pure =<< readFile =<< getDataFileName "tcl-bits/banana.tcl"
   -- Build NetworkDescription
   let network = do 
         (_,tcl) <- flip runTclBuilderT () $ do
@@ -146,9 +145,10 @@ runGUI out gui = do
           addParameter (dispatch, initEvt) gui
         liftIO $ writeIORef tclRef tcl
   -- Compile network
-  e <- compile network
-  writeTcl dispatch =<< readIORef tclRef
-  return (dispatch, e)
+  e   <- compile network
+  lib <- readFile =<< getDataFileName "tcl-bits/banana.tcl"
+  ui  <- readIORef tclRef
+  return (dispatch, e, lib : (renderTcl =<< ui))
 
 
 

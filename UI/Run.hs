@@ -35,7 +35,8 @@ runGuiInSubprocess ui
           logDoc $ green $ text s
     -- Create and execute event network
     run (inp, out, err, pid) = do
-      (dispatch, network) <- runGUI (output inp) ui
+      (dispatch, network, tcl) <- runGUI (output inp) ui
+      writeRenderedTcl dispatch tcl
       forkIO $
         mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
       -- Send stderr to logger
