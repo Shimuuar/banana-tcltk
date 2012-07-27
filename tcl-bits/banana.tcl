@@ -5,6 +5,18 @@
 # Such variable names must not appear here
 
 
+# Make sane defaults for the file dialog. By default it shows all
+# gazillion of hidden files which is pure insanity from usability
+# standpoint.
+#
+# load the dialog once, otherwise setting the vars will not work
+catch {tk_getOpenFile -with-invalid-argument}
+# change the environment variables
+namespace eval ::tk::dialog::file {
+    variable showHiddenBtn 1
+    variable showHiddenVar 0
+}
+
 
 # Validate entry for interger entry
 #
