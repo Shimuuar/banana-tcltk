@@ -52,14 +52,19 @@ proc notebook_event_tab { pref n } {
 }
 
 
+# Generate event when checkbutton is toggled
+#
+#   pref - event prefix
+#   n    - checkbox name
+#   st   - initial state
 proc checkbutton_event_toggle { pref n st } {
     # Callback
     proc checkbutton_event_toggle_callback { pref n } {
 	puts [ concat $pref [ $n instate selected ] ]
     }
-    $n configure -command [list checkbutton_event_toggle_callback $pref $n]
-    # Set initial state and ping back
+    # Set initial state
     if $st {
 	$n state selected
     }
+    $n configure -command [list checkbutton_event_toggle_callback $pref $n]
 }
