@@ -39,6 +39,7 @@ Library
     UI.TclTk
     UI.TclTk.AST
     UI.TclTk.Basic
+    UI.TclTk.Dialog
     UI.TclTk.Builder
     UI.Widget
     UI.Widget.Choice

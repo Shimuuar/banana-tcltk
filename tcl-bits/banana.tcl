@@ -18,6 +18,10 @@ namespace eval ::tk::dialog::file {
 }
 
 
+# ================================================================
+# Widgets
+# ================================================================
+
 # Validate entry for interger entry
 #
 #   pref   - unique command prefix
@@ -67,4 +71,31 @@ proc checkbutton_event_toggle { pref n st } {
 	$n state selected
     }
     $n configure -command [list checkbutton_event_toggle_callback $pref $n]
+}
+
+
+
+# ================================================================
+# Dialogs
+# ================================================================
+
+proc dialog_file_worker { pref, fun } {
+    set x [ $fun ]
+    if { $x != "" } {
+	puts [concat $pref $x]
+    }
+}
+
+# Dialog for open files
+#
+#  pref - event prefix
+proc dialog_open_file {pref} {
+    dialog_file_worker $pref tk_getOpenFile
+}
+
+# Dialog for open files
+#
+#  pref - event prefix
+proc dialog_save_file {pref} {
+    dialog_file_worker $pref tk_getSaveFile
 }
