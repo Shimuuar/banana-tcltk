@@ -14,13 +14,23 @@ import UI.TclTk.Builder
 --   with given prefix
 dialogSaveFile :: EvtPrefix FilePath
                -> Event t ()
+               -> [(String,String)]
                -> GUI t p ()
-dialogSaveFile pref evt = actimateTcl evt $ do
-  stmt $ Stmt [Name "dialog_save_file", LitStr (getEvtPrefix pref)]
+dialogSaveFile pref evt ftypes = actimateTcl evt $ do
+  stmt $ Stmt [ Name "dialog_save_file"
+              , LitStr (getEvtPrefix pref)
+              , Braces
+                  [ Braces [ LitStr nm, LitStr mask ] | (nm,mask) <- ftypes]
+              ]
 
 -- | Same as 'dialogSaveFile' but creates open dialog
 dialogOpenFile :: EvtPrefix FilePath
                -> Event t ()
+               -> [(String,String)]
                -> GUI t p ()
-dialogOpenFile pref evt = actimateTcl evt $ do
-  stmt $ Stmt [Name "dialog_open_file", LitStr (getEvtPrefix pref)]
+dialogOpenFile pref evt ftypes = actimateTcl evt $ do
+  stmt $ Stmt [ Name "dialog_open_file"
+              , LitStr (getEvtPrefix pref)
+              , Braces
+                  [ Braces [ LitStr nm, LitStr mask ] | (nm,mask) <- ftypes]
+              ]

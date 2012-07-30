@@ -79,8 +79,8 @@ proc checkbutton_event_toggle { pref n st } {
 # Dialogs
 # ================================================================
 
-proc dialog_file_worker { pref fun } {
-    set x [ $fun ]
+proc dialog_file_worker { pref fun types } {
+    set x [ $fun -filetypes $types ]
     if { $x != "" } {
 	puts [concat $pref $x]
     }
@@ -89,13 +89,13 @@ proc dialog_file_worker { pref fun } {
 # Dialog for open files
 #
 #  pref - event prefix
-proc dialog_open_file {pref} {
-    dialog_file_worker $pref tk_getOpenFile
+proc dialog_open_file { pref types } {
+    dialog_file_worker $pref tk_getOpenFile $types
 }
 
 # Dialog for open files
 #
 #  pref - event prefix
-proc dialog_save_file {pref} {
-    dialog_file_worker $pref tk_getSaveFile
+proc dialog_save_file { pref types } {
+    dialog_file_worker $pref tk_getSaveFile $types
 }
