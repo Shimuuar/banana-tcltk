@@ -8,6 +8,7 @@ module UI.TclTk (
     -- ** Label
   , label
     -- ** Button
+  , tclButton
   , button
     -- ** Checkbutton
   , tclCheckbutton
@@ -78,16 +79,22 @@ label opts packs
   = widget "ttk::label" opts packs []
 
 
+-- | Tk button
+tclButton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclButton opts packs
+  = widget "ttk::button" opts packs []
 
--- | Tk button.
+-- | Tk button which generate event when pressed.
 button :: (Monad m, Command a) => [Option p] -> [Pack] -> Cmd a -> TclBuilderT x p m TkName
-button opts packs cmd
-  = widget "ttk::button"
-      opts
-      packs
-      [ Name "-command"
-      , Braces $ commandExpr cmd
-      ]
+button opts packs cmd = do
+  nm <- tclButton opts packs
+  stmt $ Stmt [ WName nm
+              , Name "configure"
+              , Name "-command"
+              , Braces $ commandExpr cmd
+              ]
+  return nm
+
 
 -- | Tk checkbutton
 tclCheckbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
