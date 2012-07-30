@@ -79,7 +79,7 @@ proc checkbutton_event_toggle { pref n st } {
 # Dialogs
 # ================================================================
 
-proc dialog_file_worker { pref, fun } {
+proc dialog_file_worker { pref fun } {
     set x [ $fun ]
     if { $x != "" } {
 	puts [concat $pref $x]
