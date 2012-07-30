@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module UI.Command (
     Command(..)
   ) where
@@ -42,6 +43,10 @@ instance Command Double where
   encode = encodeRead
   decode = decodeRead
 
+instance Command [Char] where
+  encode     = (:[])
+  decode [s] = Just s
+  decode _   = Nothing
 
 instance Command Bool where
   encode True  = ["true" ]
