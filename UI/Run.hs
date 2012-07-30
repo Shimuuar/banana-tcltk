@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module UI.Run (
   runGuiInSubprocess
@@ -35,10 +36,12 @@ runGuiInSubprocess ui
           logDoc $ green $ text s
     -- Create and execute event network
     run (inp, out, err, pid) = do
+      tid                      <- myThreadId
       (dispatch, network, tcl) <- runGUI (output inp) ui
       -- Dispatch incoming messages
       forkIO $
-        mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out
+        handle (\(e :: SomeException) -> throwTo tid e)
+               (mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out)
       -- Send stderr to logger
       forkIO $
         mapM_ logStr . lines =<< hGetContents err
