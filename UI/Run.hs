@@ -1,12 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module UI.Run (
-  runGuiInSubprocess
+    runGuiInSubprocess
+  , runServerGui
   ) where
 
 import Control.Monad
 import Control.Concurrent
 import Control.Exception
+
+import Network.Socket
 
 import Reactive.Banana
 
@@ -60,3 +63,64 @@ runGuiInSubprocess ui
         Nothing -> do terminateProcess pid
                       void $ forkIO $ void $ waitForProcess pid
         _       -> return ()
+
+
+-- | Run GUI as server listening on the UNIX socket.
+--
+--   WARNING: this is experimental feature and all connections are
+--            trusted.
+runServerGui :: FilePath                -- ^ Path to UNIX socket
+             -> (forall t. GUI t () ()) -- ^ GUI
+             -> IO ()
+runServerGui fname ui = do
+  chIncoming <- newChan         -- Channel for events from GUI
+  chOutgoing <- newChan         -- Broadcast channel for event
+  -- Cunning function for writeing Tcl code.
+  -- It sends message to the output channel and reads it back to
+  -- prevent memory leak
+  let broadcast msg = do
+        writeChan chOutgoing msg
+        void $ readChan chOutgoing
+  -- Prepare GUI
+  (dispatch, network, tcl) <- runGUI broadcast ui
+  -- Set up worker thread
+  _ <- forkIO $ do
+         actuate network
+         forever $ pushMessage dispatch . words =<< readChan chIncoming
+  -- Listen on the socket
+  s <- socket AF_UNIX Stream defaultProtocol
+  bindSocket s $ SockAddrUnix fname
+  listen s 4
+  forever $ do
+    (sock,_) <- accept s
+    ch       <- dupChan chOutgoing
+    -- Listener thread
+    _ <- forkIO $ do
+           let loop str = do
+                 case tokenize str of
+                   (evts,rest) -> do
+                     mapM_ (writeChan chIncoming) evts
+                     xs <- recv sock 4096
+                     loop $ rest ++ xs
+           loop ""
+    -- Writer thread
+    _ <- forkIO $ do
+           sendAll sock $ unlines tcl
+           pushInitEvent dispatch
+           forever $
+             sendAll sock . unlines =<< readChan ch
+    return ()
+
+
+tokenize :: String -> ([String],String)
+tokenize s =
+  case break (== '\n') s of
+    (x, '\n':ss) -> (x:xs, rest) where (xs,rest) = tokenize ss
+    (x, _      ) -> ([],x)
+
+sendAll :: Socket -> String -> IO ()
+sendAll s str = do
+  n <- send s str
+  case drop n str of
+    [] -> return ()
+    xs -> sendAll s xs

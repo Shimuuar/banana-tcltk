@@ -30,6 +30,7 @@ Library
     mtl             >= 2,
     transformers    >= 0.2.2,
     contravariant,
+    network,
     ansi-wl-pprint
   Exposed-modules:
     UI.Command
