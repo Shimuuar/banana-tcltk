@@ -158,11 +158,12 @@ renderExpr n x (BracesS s)
 -- Literals
 renderExpr _ _ (LitStr  s) = '"' : (escape =<< s) ++ "\""
   where
-    escape '"' = "\\\""
-    escape '$' = "\\$"
-    escape '[' = "\\["
-    escape ']' = "\\]"
-    escape  c  = [c]
+    escape '\\' = "\\\\"
+    escape '"'  = "\\\""
+    escape '$'  = "\\$"
+    escape '['  = "\\["
+    escape ']'  = "\\]"
+    escape  c   = [c]
 renderExpr _ _ (LitInt  i) = show i
 renderExpr _ _ (LitReal x) = show x
 renderExpr _ _ (LitBool b) = if b then "1" else "0"
