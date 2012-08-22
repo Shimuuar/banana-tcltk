@@ -141,8 +141,9 @@ instance Apply (EB t) (Event t) where
 ----------------------------------------------------------------
 
 -- | Checkbutton
-checkbutton :: [Option p]       -- ^ GUI options
-            -> [Pack]           -- ^ Packing options
+checkbutton :: (GeomManager geom)
+            => [Option p]       -- ^ GUI options
+            -> geom             -- ^ Packing options
             -> Bool             -- ^ Initial state
             -> GUI t p (Widget t Bool Bool)
 checkbutton opts packs st = do
@@ -165,8 +166,9 @@ checkbutton opts packs st = do
 
 
 -- | Text entry which may hold integer numbers.
-entryInt :: [Option p]          -- ^ Entry options
-         -> [Pack]              -- ^ Packing options
+entryInt :: GeomManager geom
+         => [Option p]          -- ^ Entry options
+         -> geom                -- ^ Packing options
          -> Int                 -- ^ Initial state
          -> GUI t p (Widget t Int Int)
 entryInt opts packs n = do

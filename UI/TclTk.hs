@@ -1,8 +1,11 @@
+{-# LANGUAGE GADTs #-}
 -- | Tck combinators
 module UI.TclTk (
+    -- * Geometry manager
+    GeomManager(..)
     -- * Tk widgets
     -- ** Frame
-    frame
+  , frame
   , frame_
   , spacer
     -- ** Label
@@ -45,13 +48,26 @@ import UI.TclTk.AST
 import UI.TclTk.Builder
 
 
+----------------------------------------------------------------
+-- Geometry managers
+----------------------------------------------------------------
+
+-- | Geometry managers. Tcl\/Tk provide two geometry managers: pack and grid.
+--   This type class allow to choose between them.
+class GeomManager geom where
+  placeWidget :: Monad m => TkName -> geom -> TclBuilderT x p m ()
+
+instance a ~ Pack => GeomManager [a] where
+  placeWidget = pack
+
+
 
 ----------------------------------------------------------------
 -- Tk widgets
 ----------------------------------------------------------------
 
 -- | Tk frame widget used as container.
-frame :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
+frame :: (Monad m, GeomManager geom) => geom -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
 frame packs content = do
   nm <- widget "ttk::frame"
           [ Padding 10 ]
@@ -61,12 +77,14 @@ frame packs content = do
   return (nm,x)
 
 -- | Tk frame which returns only name of frame.
-frame_ :: Monad m => [Pack] -> TclBuilderT x p m a -> TclBuilderT x p m TkName
+frame_ :: (Monad m, GeomManager geom) => geom -> TclBuilderT x p m a -> TclBuilderT x p m TkName
 frame_ packs content = do
   (nm, _) <- frame packs content
   return nm
 
 -- | Empty frame which takes all available space.
+--
+--   FIXME: How does it interact with grid ???
 spacer :: Monad m => TclBuilderT x p m TkName
 spacer = frame_ [Expand True, Fill FillBoth]
        $ return ()
@@ -74,18 +92,19 @@ spacer = frame_ [Expand True, Fill FillBoth]
 
 
 -- | Tk label.
-label :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+label :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
 label opts packs
   = widget "ttk::label" opts packs []
 
 
 -- | Tk button
-tclButton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclButton :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
 tclButton opts packs
   = widget "ttk::button" opts packs []
 
 -- | Tk button which generate event when pressed.
-button :: (Monad m, Command a) => [Option p] -> [Pack] -> Cmd a -> TclBuilderT x p m TkName
+button :: (Monad m, Command a, GeomManager geom)
+       => [Option p] -> geom -> Cmd a -> TclBuilderT x p m TkName
 button opts packs cmd = do
   nm <- tclButton opts packs
   stmt $ Stmt [ WName nm
@@ -97,24 +116,24 @@ button opts packs cmd = do
 
 
 -- | Tk checkbutton
-tclCheckbutton :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclCheckbutton :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
 tclCheckbutton opts packs
   = widget "ttk::checkbutton" opts packs []
 
 -- | Entry widget
-tclEntry :: Monad m => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+tclEntry :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
 tclEntry opts packs
   = widget "ttk::entry" opts packs []
 
 
 
 -- | Tk text area
-textarea :: (Monad m) => [Option p] -> [Pack] -> TclBuilderT x p m TkName
+textarea :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
 textarea opts packs
   = widget "tk::text" opts packs []
 
 -- | Replace text in the text area
-textReplace :: Monad m => TkName -> Expr p -> TclBuilderT x p m ()
+textReplace :: (Monad m) => TkName -> Expr p -> TclBuilderT x p m ()
 textReplace nm str
   = stmt $ Stmt [ WName nm
                     , Name "replace" , Name "0.0" , Name "end" , str
@@ -122,8 +141,9 @@ textReplace nm str
 
 
 -- | Notebook widget.
-notebook :: Monad m 
-         => [Option p] -> [Pack] 
+notebook :: (Monad m, GeomManager geom)
+         => [Option p]          -- ^ Widget options
+         -> geom                -- ^ Geometry specifications
          -> [(String, TclBuilderT x p m TkName)]
          -- ^ Function to generate list of widgets to insert
          -> TclBuilderT x p m TkName
@@ -161,7 +181,7 @@ configure nm opt
   = stmt $ Stmt $ WName nm : Name "configure" : renderOption opt
 
 -- | Disable widget
-disable :: Monad m 
+disable :: Monad m
         => TkName               -- ^ Widget name
         -> Bool                 -- ^ @True@ - disable, @False@ - enable
         -> TclBuilderT x p m ()
@@ -172,7 +192,7 @@ disable nm flag
                 ]
 
 -- | Bind expressio to event.
-bind :: Monad m 
+bind :: Monad m
      => TkName                  -- ^ Widget name
      -> String                  -- ^ Tcl/Tk event name
      -> Expr p                  -- ^ Callback to execute
@@ -191,15 +211,15 @@ bind nm evt expr
 ----------------------------------------------------------------
 
 -- | Generic function for creating Tk widget.
-widget :: Monad m
+widget :: (Monad m, GeomManager geom)
        => String                -- ^ Widget constructor
        -> [Option p]            -- ^ Options
-       -> [Pack]                -- ^ Packing options
+       -> geom                  -- ^ Packing options
        -> [Expr p]              -- ^ Arbitrary expressions
        -> TclBuilderT x p m TkName
 widget wdgt opts packs exprs = do
   nm <- freshTkName
   stmt
     $ Stmt (Name wdgt : WName nm : (renderOption =<< opts) ++ exprs)
-  pack nm packs
+  placeWidget nm packs
   return nm
