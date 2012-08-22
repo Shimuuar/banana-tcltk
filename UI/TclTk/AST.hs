@@ -15,6 +15,7 @@ module UI.TclTk.AST (
   , castFrom_
     -- ** Extra types
   , Option(..)
+  , Color(..)
   , Grid(..)
   , Pack(..)
   , PackAnchor(..)
@@ -30,6 +31,7 @@ module UI.TclTk.AST (
 
 import Data.String
 import Data.Functor.Contravariant
+import Text.Printf
 
 
 
@@ -60,14 +62,23 @@ data Expr a
 -- | Name of Tk widgets
 newtype TkName = TkName [String]
 
--- | Widget options
+-- | Widget options. It's enumeration of all possible options. Some
+--   could be invalid for some widgets.
 data Option a
   = Text    String
   | Width   Int
   | Height  Int
   | Padding Int
   | TextVariable String
+  | Foreground   Color
+  | Background   Color
   | LamOpt (a -> Option a)
+
+-- | Colors known by Tcl/Tk
+data Color
+  = Color String      -- ^ Symbolic name for color
+  | RGB   Int Int Int -- ^ RGB values
+
 
 -- | Information for grid geometry manager: @Grid column row@
 data Grid
@@ -219,4 +230,14 @@ renderOption (Width   n) = [Name "-width"  , LitInt n]
 renderOption (Height  n) = [Name "-height" , LitInt n]
 renderOption (Padding n) = [Name "-padding", LitInt n]
 renderOption (TextVariable v) = [ Name "-textvariable", Name v]
+renderOption (Foreground   c) = [ Name "-foreground"  , color c ]
+renderOption (Background   c) = [ Name "-background"  , color c ]
 renderOption (LamOpt  f) = [LamE $ SeqE . renderOption . f ]
+
+color :: Color -> Expr a
+color (Color s)   = Name s
+color (RGB r g b) = Name $ "#" ++ toS r ++ toS g ++ toS b
+  where
+    toS i | i < 0     = "00"
+          | i >= 255  = "ff"
+          | otherwise = printf "%02x" i
