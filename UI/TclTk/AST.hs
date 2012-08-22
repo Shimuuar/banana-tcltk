@@ -15,6 +15,7 @@ module UI.TclTk.AST (
   , castFrom_
     -- ** Extra types
   , Option(..)
+  , Grid(..)
   , Pack(..)
   , PackAnchor(..)
   , PackFill(..)
@@ -67,6 +68,10 @@ data Option a
   | Padding Int
   | TextVariable String
   | LamOpt (a -> Option a)
+
+-- | Information for grid geometry manager: @Grid column row@
+data Grid
+  = Grid Int Int
 
 -- | Packing for widgets
 data Pack 

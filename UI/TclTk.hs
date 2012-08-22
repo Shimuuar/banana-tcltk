@@ -60,6 +60,14 @@ class GeomManager geom where
 instance a ~ Pack => GeomManager [a] where
   placeWidget = pack
 
+instance GeomManager Grid where
+  placeWidget nm (Grid col row) = do
+    stmt $ Stmt [ Name "grid"
+                , WName nm
+                , Name "-column" , LitInt col
+                , Name "-row"    , LitInt row
+                ]
+
 
 
 ----------------------------------------------------------------
