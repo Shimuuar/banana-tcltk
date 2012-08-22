@@ -290,10 +290,8 @@ closure (TclBuilderT m) =
 commandExpr :: Command a => Cmd a -> [Expr p]
 commandExpr (Cmd (EvtPrefix pref) action) =
   [ Name "puts"
-  , LitStr command
+  , LitStr $ unlex $ pref : encode action
   ]
-  where
-    command = unwords $ pref : encode action
 
 
 

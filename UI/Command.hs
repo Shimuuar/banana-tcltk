@@ -1,10 +1,45 @@
 {-# LANGUAGE FlexibleInstances #-}
 module UI.Command (
     Command(..)
+  , lex
+  , unlex
   ) where
 
+import Control.Arrow       (first)
 import Control.Applicative
 import Data.Char
+import Data.List           (intercalate)
+import Prelude hiding (lex)
+
+
+
+-- | Lex string read from Tcl to chunks. Spaces are used as
+--   separators. Literal spaces and backslashes are backslash
+--   escaped. Tabs are not separators.
+lex :: String -> [String]
+lex s =
+  case dropWhile (== ' ') s of
+    "" -> []
+    w  -> case walk w of
+            (tok,rest) -> tok : lex rest
+  where
+    -- Break & unescaping
+    walk (     ' ' :ss) = ("",ss)
+    walk ('\\':'\\':ss) = first ('\\':) $ walk ss
+    walk ('\\':' ' :ss) = first (' ' :) $ walk ss
+    walk (       c :ss) = first ( c  :) $ walk ss
+    walk []             = ("","")
+
+-- | Convert string for printing by Tcl
+unlex :: [String] -> String
+unlex ss
+  = intercalate " "
+  $ map (concatMap escape) ss
+  where
+    escape ' '  = "\\ "
+    escape '\\' = "\\\\"
+    escape  c   = [c]
+
 
 
 -- | Since communication with Tcl goes through pipe commands which are

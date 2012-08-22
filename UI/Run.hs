@@ -15,10 +15,12 @@ import Reactive.Banana
 
 import System.IO
 import System.Process
+import Prelude hiding (lex)
 
-import UI.TclTk.Builder
-import UI.Dispatch
+import UI.Command
 import UI.Log
+import UI.Dispatch
+import UI.TclTk.Builder
 
 import Text.PrettyPrint.ANSI.Leijen
 
@@ -44,7 +46,7 @@ runGuiInSubprocess ui
       -- Dispatch incoming messages
       forkIO $
         handle (\(e :: SomeException) -> throwTo tid e)
-               (mapM_ (pushMessage dispatch . words) . lines =<< hGetContents out)
+               (mapM_ (pushMessage dispatch . lex) . lines =<< hGetContents out)
       -- Send stderr to logger
       forkIO $
         mapM_ logStr . lines =<< hGetContents err
@@ -86,7 +88,7 @@ runServerGui fname ui = do
   -- Set up worker thread
   _ <- forkIO $ do
          actuate network
-         forever $ pushMessage dispatch . words =<< readChan chIncoming
+         forever $ pushMessage dispatch . lex =<< readChan chIncoming
   -- Listen on the socket
   s <- socket AF_UNIX Stream defaultProtocol
   bindSocket s $ SockAddrUnix fname
