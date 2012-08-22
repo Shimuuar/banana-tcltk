@@ -67,14 +67,15 @@ runGuiInSubprocess ui
         _       -> return ()
 
 
--- | Run GUI as server listening on the UNIX socket.
+-- | Run GUI as server listening on the UNIX socket. Socket passed to
+--   the function must be ready to be used with 'accept'
 --
 --   WARNING: this is experimental feature and all connections are
 --            trusted.
-runServerGui :: FilePath                -- ^ Path to UNIX socket
+runServerGui :: Socket                  -- ^ Socket
              -> (forall t. GUI t () ()) -- ^ GUI
              -> IO ()
-runServerGui fname ui = do
+runServerGui s ui = do
   chIncoming <- newChan         -- Channel for events from GUI
   chOutgoing <- newChan         -- Broadcast channel for event
   -- Cunning function for writeing Tcl code.
@@ -89,10 +90,6 @@ runServerGui fname ui = do
   _ <- forkIO $ do
          actuate network
          forever $ pushMessage dispatch . lex =<< readChan chIncoming
-  -- Listen on the socket
-  s <- socket AF_UNIX Stream defaultProtocol
-  bindSocket s $ SockAddrUnix fname
-  listen s 4
   forever $ do
     (sock,_) <- accept s
     ch       <- dupChan chOutgoing
