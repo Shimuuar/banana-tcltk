@@ -95,6 +95,16 @@ instance Command Bool where
       _       -> Nothing
   decode _ = Nothing
 
+instance (Command a, Command b) => Command (a,b) where
+  encode (a,b) = map ('_':) $ encode a ++ [""] ++ encode b
+  decode strs  = do
+    let strip ('_':s) = Just s
+        strip _       = Nothing
+    ss <- mapM strip strs
+    case break null ss of
+      (a, "":b) -> (,) <$> decode a <*> decode b
+      _         -> Nothing
+
 
 
 ----------------------------------------------------------------
