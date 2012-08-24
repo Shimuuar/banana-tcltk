@@ -42,7 +42,6 @@ data Tcl a
 
 -- | Tcl expression
 data Expr a
-  -- FIXME: LamE (a -> [Expr a]) ???
   = Name    String              -- ^ Simple name
   | WName   TkName              -- ^ Name of Tk widget
   | SubVar  String              -- ^ Variable substitution
