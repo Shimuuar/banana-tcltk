@@ -1,8 +1,11 @@
 {-# LANGUAGE GADTs #-}
 -- | Tck combinators
 module UI.TclTk (
+    -- * GUI monad
+    TclBuilderT
+  , GUI
     -- * Geometry manager
-    GeomManager(..)
+  , GeomManager(..)
     -- * Tk widgets
     -- ** Frame
   , frame
@@ -32,6 +35,8 @@ module UI.TclTk (
     -- * Helpers
   , widget
     -- * FRP
+  , EvtPrefix(getEvtPrefix)
+  , Cmd(..)
   , closure
   , initEvent
   , eventChanges

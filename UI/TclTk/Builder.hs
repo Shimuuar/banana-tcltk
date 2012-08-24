@@ -1,7 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE Rank2Types #-}
--- | Monad transfomer for building Tcl program
-module UI.TclTk.Builder ( 
+-- | Monad transformer for building Tcl program. It provides basic
+--   combinators. Most of the time you should use module 'UI.TclTk'
+--   which reexport most frequently used functions and combinators.
+module UI.TclTk.Builder (
     -- * Builder monad
     TclBuilderT
   , GUI
@@ -58,27 +60,26 @@ import Paths_banana_tcltk
 -- | Monad transformer for building interface. It provides fresh name
 --   generation and accumulation of Tcl statements. Parameters have
 --   following meaning:
--- 
+--
 -- [@x@] Extra parameter which could be retrieved with 'getParameter'
 --       and set using 'addParameter'
 --
 -- [@p@] Parameter type of Tcl AST
---
--- FIXME: describe init event semantics.
 newtype TclBuilderT x p m a
-  = TclBuilderT 
+  = TclBuilderT
       (ReaderT (TclParam x)
         (WriterT [Tcl p]
-           (StateT TclState m) 
+           (StateT TclState m)
          )
          a
       )
   deriving ( Functor, Applicative, Monad
-           , MonadWriter [Tcl p] 
+           , MonadWriter [Tcl p]
            )
 
--- | Type for building FRP GUIs using Tcl/Tk
-type GUI t p a = TclBuilderT 
+-- | Type-restricted synonym for 'TclBuilderT' which incorporate event
+--   handling.
+type GUI t p a = TclBuilderT
                    (Dispatch, Event t ())
                    p
                    (NetworkDescription t)
@@ -92,8 +93,8 @@ instance MonadIO m => MonadIO (TclBuilderT x p m) where
 
 
 -- State of builder
-data TclState = TclState 
-  { counter      :: Int 
+data TclState = TclState
+  { counter      :: Int
   }
 
 -- Parameters for reader
@@ -111,12 +112,12 @@ data TclParam x = TclParam
 
 -- | Execute tcl builder
 runTclBuilderT :: Monad m => TclBuilderT x p m a -> x -> m (a, [Tcl p])
-runTclBuilderT (TclBuilderT m) x 
-  = flip evalStateT st  
-  $ runWriterT 
+runTclBuilderT (TclBuilderT m) x
+  = flip evalStateT st
+  $ runWriterT
   $ runReaderT m param
   where
-    st = TclState 
+    st = TclState
        { counter      = 0
        }
     param = TclParam
@@ -134,12 +135,12 @@ runGUI out gui = do
   tclRef   <- newIORef []
   -- Set up dispatch
   dispatch         <- newDispatch
-  (register, push) <- newAddHandler  
+  (register, push) <- newAddHandler
   setOutput   dispatch  out
   setPushInit dispatch (push ())
   -- Send library code
   -- Build NetworkDescription
-  let network = do 
+  let network = do
         (_,tcl) <- flip runTclBuilderT () $ do
           initEvt <- lift $ fromAddHandler register
           addParameter (dispatch, initEvt) gui
@@ -182,7 +183,7 @@ freshTkName = do
 -- Combinators
 ----------------------------------------------------------------
 
--- | Set current packing 
+-- | Set current packing
 withPack :: Monad m => PackSide -> TclBuilderT x p m a -> TclBuilderT x p m a
 withPack p widget
   = withParam (\c -> c { currentPack = p }) widget
@@ -269,7 +270,8 @@ actimateTclB bhv command = do
   evt   <- eventChanges bhv
   lift $ actimateWith (writeTclParam d tcl) evt
 
--- | Execute IO action in responce to event.
+-- | Execute IO action in responce to event. Unlike 'actimateTcl' this
+--   function ignores init events.
 actimateIO :: Event t a
            -> (a -> IO ())
            -> GUI t p ()
@@ -281,12 +283,12 @@ actimateIO evt action =
 closure :: Monad m => TclBuilderT x p m () -> TclBuilderT x q m [Tcl p]
 closure (TclBuilderT m) =
   TclBuilderT $ do
-    -- FIXME: should path be resetted
+    -- FIXME: should path be resetted???
     par   <- ask
     (_,w) <- lift $ lift $ runWriterT $ runReaderT m par
     return w
 
--- | Comvert command to parametrized Tcl expression.
+-- | Convert command to parametrized Tcl expression.
 commandExpr :: Command a => Cmd a -> [Expr p]
 commandExpr (Cmd (EvtPrefix pref) action) =
   [ Name "puts"
@@ -303,7 +305,7 @@ commandExpr (Cmd (EvtPrefix pref) action) =
 getSt :: Monad m => TclBuilderT x p m TclState
 getSt = TclBuilderT $ lift get
 
--- Put staye  
+-- Put staye
 putSt :: Monad m => TclState -> TclBuilderT x p m ()
 putSt = TclBuilderT . lift . put
 
