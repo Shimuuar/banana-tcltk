@@ -1,8 +1,11 @@
 Name:           banana-tcltk
-Version:        0.0.4
-Synopsis:       FRP fr Tcl/Tk
+Version:        0.0.5
+Synopsis:       FRP for Tcl/Tk
 Description:
-  FRP fr Tcl/Tk
+  FRP for Tcl/Tk.
+  .
+  GUI is executed in separate process and use for multiple GUIs is
+  possible.
 
 Cabal-Version:  >= 1.6
 License:        BSD3
