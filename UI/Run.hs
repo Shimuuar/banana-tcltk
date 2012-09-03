@@ -11,7 +11,7 @@ import Control.Exception
 
 import Network.Socket
 
-import Reactive.Banana
+import Reactive.Banana.Frameworks
 
 import System.IO
 import System.Process
@@ -25,8 +25,9 @@ import UI.TclTk.Builder
 import Text.PrettyPrint.ANSI.Leijen
 
 
+
 -- | Run GUI. Tcl interpreter will be executed in subprocess
-runGuiInSubprocess :: (forall t. GUI t () ()) -> IO ()
+runGuiInSubprocess :: (forall t. Frameworks t => GUI t () ()) -> IO ()
 runGuiInSubprocess ui
   = bracket
       (runInteractiveProcess "wish" [] Nothing Nothing)
@@ -73,7 +74,7 @@ runGuiInSubprocess ui
 --   WARNING: this is experimental feature and all connections are
 --            trusted.
 runServerGui :: Socket                  -- ^ Socket
-             -> (forall t. GUI t () ()) -- ^ GUI
+             -> (forall t. Frameworks t => GUI t () ()) -- ^ GUI
              -> IO ()
 runServerGui s ui = do
   chIncoming <- newChan         -- Channel for events from GUI

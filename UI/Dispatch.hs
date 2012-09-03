@@ -14,12 +14,12 @@ module UI.Dispatch (
   ) where
 
 import Control.Applicative
-import Control.Monad.IO.Class
 
 import Data.IORef
 import qualified Data.Map as Map
 
 import Reactive.Banana
+import Reactive.Banana.Frameworks
 
 import UI.TclTk.AST
 import UI.Command
@@ -102,18 +102,18 @@ pushMessage (Dispatch s) (key:msg) = do
 
 -- | Register event in the dispatch table. This function is not meant
 --   to be used directly. Use 'addTclEvent' instead.
-registerEvent :: (Command a)
+registerEvent :: (Command a, Frameworks t)
               => Dispatch       -- ^ Dispatch table
               -> String         -- ^ Unique event prefix.
-              -> NetworkDescription t (AddHandler a)
+              -> Moment t (AddHandler a)
 registerEvent (Dispatch s) pref = do
-  src  <- liftIO $ readIORef s
-  (register, run) <- liftIO  newAddHandler
+  src  <- liftIONow $ readIORef s
+  (register, run) <- liftIONow newAddHandler
   let action str =
         case decode str of
           Just x  -> run x
           Nothing -> return ()
-  liftIO $ writeIORef s $ src { eventDispatch = Map.insert pref action (eventDispatch src) }
+  liftIONow $ writeIORef s $ src { eventDispatch = Map.insert pref action (eventDispatch src) }
   return register
 
 

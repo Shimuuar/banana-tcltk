@@ -4,6 +4,7 @@ module UI.Widget.List (
 
 import Reactive.Banana
 import Reactive.Banana.Extra
+import Reactive.Banana.Frameworks
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -12,7 +13,7 @@ import UI.Widget
 import UI.Command
 
 
-listWidget :: Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
+listWidget :: Frameworks t => Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
 listWidget bhvXs = do
   -- Events
   (pref,cmdEvt) <- addTclEvent

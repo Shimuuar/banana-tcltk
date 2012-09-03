@@ -2,6 +2,8 @@ module Reactive.Banana.Extra where
 
 import Control.Applicative
 import Reactive.Banana
+import Reactive.Banana.Frameworks
+
 
 
 ----------------------------------------------------------------
@@ -79,12 +81,12 @@ maybeEvent f e
 -- Actimate variants
 ----------------------------------------------------------------
 
-actimateWith :: (a -> IO ()) -> Event t a -> NetworkDescription t ()
+actimateWith :: Frameworks t => (a -> IO ()) -> Event t a -> Moment t ()
 actimateWith f = reactimate . fmap f
 
-actimateWith_ :: IO () -> Event t a -> NetworkDescription t ()
+actimateWith_ :: Frameworks t => IO () -> Event t a -> Moment t ()
 actimateWith_ f = reactimate . fmap (const f)
 
-actimateBhvWith :: (a -> IO ()) -> Behavior t a -> NetworkDescription t ()
+actimateBhvWith :: Frameworks t => (a -> IO ()) -> Behavior t a -> Moment t ()
 actimateBhvWith f bhv
   = actimateWith f =<< changes bhv

@@ -4,6 +4,7 @@ module UI.TclTk.Dialog (
   ) where
 
 import Reactive.Banana
+import Reactive.Banana.Frameworks
 
 import UI.TclTk.AST
 import UI.TclTk.Builder
@@ -12,7 +13,8 @@ import UI.TclTk.Builder
 
 -- | In responce to event create file dialog which may generate event
 --   with given prefix
-dialogSaveFile :: EvtPrefix FilePath
+dialogSaveFile :: Frameworks t
+               => EvtPrefix FilePath
                -> Event t ()
                -> [(String,String)]
                -> GUI t p ()
@@ -24,7 +26,8 @@ dialogSaveFile pref evt ftypes = actimateTcl evt $ do
               ]
 
 -- | Same as 'dialogSaveFile' but creates open dialog
-dialogOpenFile :: EvtPrefix FilePath
+dialogOpenFile :: Frameworks t
+               => EvtPrefix FilePath
                -> Event t ()
                -> [(String,String)]
                -> GUI t p ()

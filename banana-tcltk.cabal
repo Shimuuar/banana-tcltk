@@ -1,5 +1,5 @@
 Name:           banana-tcltk
-Version:        0.0.5
+Version:        0.0.6
 Synopsis:       FRP for Tcl/Tk
 Description:
   FRP for Tcl/Tk.
@@ -29,7 +29,7 @@ Library
     base            >=3 && <5,
     containers,
     process,
-    reactive-banana == 0.6.*,
+    reactive-banana == 0.7.*,
     mtl             >= 2,
     transformers    >= 0.2.2,
     contravariant,

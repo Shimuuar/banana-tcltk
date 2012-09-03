@@ -21,6 +21,7 @@ module UI.Widget (
   ) where
 
 import Reactive.Banana
+import Reactive.Banana.Frameworks
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -57,7 +58,7 @@ data EB t a = EB (Event t a) (Behavior t a)
 
 
 -- | Run widget.
-finiWidget :: Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
+finiWidget :: Frameworks t => Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
 finiWidget (Widget{..}) = do
   let valBhv = stepper wgtInitalState (wgtBack <$> wgtEvent)
       evt    = calm $ union (valBhv  <@  wgtUserInput)
@@ -66,7 +67,7 @@ finiWidget (Widget{..}) = do
   return (wgtName,  wgtEvent, valBhv)
 
 -- | Another variant of widget runner
-finiWidgetEB :: Widget t a a -> GUI t p (TkName, EB t a)
+finiWidgetEB :: Frameworks t => Widget t a a -> GUI t p (TkName, EB t a)
 finiWidgetEB w = do
   (nm,e,b) <- finiWidget w
   return (nm, EB e b)
@@ -141,7 +142,7 @@ instance Apply (EB t) (Event t) where
 ----------------------------------------------------------------
 
 -- | Checkbutton
-checkbutton :: (GeomManager geom)
+checkbutton :: (GeomManager geom, Frameworks t)
             => [Option p]       -- ^ GUI options
             -> geom             -- ^ Packing options
             -> Bool             -- ^ Initial state
@@ -166,7 +167,8 @@ checkbutton opts packs st = do
 
 
 -- | Text entry which may hold integer numbers.
-entryInt :: GeomManager geom
+entryInt :: Frameworks t
+         => GeomManager geom
          => [Option p]          -- ^ Entry options
          -> geom                -- ^ Packing options
          -> Int                 -- ^ Initial state

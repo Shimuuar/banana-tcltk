@@ -46,12 +46,15 @@ import Data.Functor.Contravariant
 import Data.IORef
 
 import Reactive.Banana
+import Reactive.Banana.Frameworks
 import Reactive.Banana.Extra
 
 import UI.TclTk.AST
 import UI.Command
 import UI.Dispatch
 import Paths_banana_tcltk
+
+
 
 ----------------------------------------------------------------
 -- Data types
@@ -82,7 +85,7 @@ newtype TclBuilderT x p m a
 type GUI t p a = TclBuilderT
                    (Dispatch, Event t ())
                    p
-                   (NetworkDescription t)
+                   (Moment t)
                    a
 
 instance MonadTrans (TclBuilderT x p) where
@@ -91,6 +94,8 @@ instance MonadTrans (TclBuilderT x p) where
 instance MonadIO m => MonadIO (TclBuilderT x p m) where
   liftIO = TclBuilderT . liftIO . liftIO . liftIO
 
+instance Frameworks t => MonadIO (Moment t) where
+  liftIO = liftIONow
 
 -- State of builder
 data TclState = TclState
@@ -128,7 +133,7 @@ runTclBuilderT (TclBuilderT m) x
 
 -- | Execute GUI builder. It creates dispatch, event network and Tcl code
 runGUI :: ([String] -> IO ())       -- ^ Output function
-       -> (forall t. GUI t () ())   -- ^ GUI
+       -> (forall t. Frameworks t => GUI t () ())   -- ^ GUI
        -> IO (Dispatch, EventNetwork, [String])
 runGUI out gui = do
   -- IORef for smuggling Tcl code from NetworkDescription monad
@@ -140,11 +145,12 @@ runGUI out gui = do
   setPushInit dispatch (push ())
   -- Send library code
   -- Build NetworkDescription
-  let network = do
+  let network :: Frameworks t => Moment t ()
+      network = do
         (_,tcl) <- flip runTclBuilderT () $ do
           initEvt <- lift $ fromAddHandler register
           addParameter (dispatch, initEvt) gui
-        liftIO $ writeIORef tclRef tcl
+        liftIONow $ writeIORef tclRef tcl
   -- Compile network
   e   <- compile network
   lib <- readFile =<< getDataFileName "tcl-bits/banana.tcl"
@@ -221,7 +227,7 @@ data Cmd a = Cmd
   }
 
 -- | Register new event. Returns unique event prefix and event.
-addTclEvent :: Command a => GUI t p (EvtPrefix a, Event t a)
+addTclEvent :: Frameworks t => Command a => GUI t p (EvtPrefix a, Event t a)
 addTclEvent = do
   pref     <- uniqString "EVT_"
   (d,_)    <- getParameter
@@ -236,7 +242,7 @@ initEvent = snd <$> getParameter
 -- | Changes of behavior. This function is similar to 'changes' but
 --   events are generated not only when behavior changes but also when
 --   GUI is attached.
-eventChanges :: Behavior t a -> GUI t p (Event t a)
+eventChanges :: Frameworks t => Behavior t a -> GUI t p (Event t a)
 eventChanges bhv = do
   initEvt <- initEvent
   evt     <- lift $ changes bhv
@@ -249,7 +255,8 @@ eventChanges bhv = do
 --   IMPORTANT: command must be idempotent because event might be
 --      resent if another GUI is attached to process.  Consult
 --      'UI.Dispatch' for details.
-actimateTcl :: Event t p        -- ^ Event
+actimateTcl :: Frameworks t
+            => Event t p        -- ^ Event
             -> GUI t p ()       -- ^ Tcl commands
             -> GUI t q ()
 actimateTcl evt command = do
@@ -261,7 +268,8 @@ actimateTcl evt command = do
        $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt
 
 -- | Mirror behavior onto GUI. Check note on 'actimateTcl'.
-actimateTclB :: Behavior t p
+actimateTclB :: Frameworks t
+             => Behavior t p
              -> GUI t p ()       -- ^ Tcl commands
              -> GUI t q ()
 actimateTclB bhv command = do
@@ -272,7 +280,8 @@ actimateTclB bhv command = do
 
 -- | Execute IO action in responce to event. Unlike 'actimateTcl' this
 --   function ignores init events.
-actimateIO :: Event t a
+actimateIO :: Frameworks t
+           => Event t a
            -> (a -> IO ())
            -> GUI t p ()
 actimateIO evt action =

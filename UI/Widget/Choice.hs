@@ -6,6 +6,7 @@ import Control.Applicative
 
 import Reactive.Banana
 import Reactive.Banana.Extra
+import Reactive.Banana.Frameworks
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -13,7 +14,8 @@ import UI.TclTk.Builder
 
 
 
-choiceWidget :: [(String, Event t a -> GUI t p TkName)] -- List of choices
+choiceWidget :: Frameworks t
+             => [(String, Event t a -> GUI t p TkName)] -- List of choices
              -> Event t a
              -> GUI t p ()
 choiceWidget [] _ = return ()
