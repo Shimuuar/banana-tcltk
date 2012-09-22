@@ -87,16 +87,16 @@ listEvents listEvt command
     acc Invalid (Left xs) = Cursor (length xs) xs 0
     acc Invalid _         = Invalid
     acc (Cursor _   _  n) (Left xs) =
-      Cursor len xs $ clip len n
-      where
-        len = length xs
+      Cursor len xs $ clip len n where len = length xs
     acc (Cursor len xs n) (Right c) =
       case c of
-        MoveFwd  d -> Cursor len xs $ clip len $ n + d
-        MoveBack d -> Cursor len xs $ clip len $ n - d
-        JumpTo   d -> Cursor len xs $ clip len d
-        ToBegin    -> Cursor len xs 0
-        ToEnd      -> Cursor len xs $ len - 1
+        MoveFwd  d -> go $ n + d
+        MoveBack d -> go $ n - d
+        JumpTo   d -> go   d
+        ToBegin    -> go   0
+        ToEnd      -> go $ len - 1
+      where
+        go = Cursor len xs . clip len
     -- Clip out of range indices
     clip len i | i < 0     = 0
                | i >= len  = len -1
