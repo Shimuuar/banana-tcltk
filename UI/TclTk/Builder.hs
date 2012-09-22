@@ -150,7 +150,7 @@ runGUI out gui = do
         (_,tcl) <- flip runTclBuilderT () $ do
           initEvt <- lift $ fromAddHandler register
           addParameter (dispatch, initEvt) gui
-        liftIONow $ writeIORef tclRef tcl
+        liftIO $ writeIORef tclRef tcl
   -- Compile network
   e   <- compile network
   lib <- readFile =<< getDataFileName "tcl-bits/banana.tcl"
