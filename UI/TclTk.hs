@@ -39,7 +39,6 @@ module UI.TclTk (
   , Cmd(..)
   , closure
   , initEvent
-  , eventChanges
   , addTclEvent
   , actimateTcl
   , actimateTclB

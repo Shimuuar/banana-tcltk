@@ -13,20 +13,17 @@ import UI.Widget
 import UI.Command
 
 
-listWidget :: Frameworks t => Behavior t [a] -> GUI t p (TkName, Event t (Int,a))
-listWidget bhvXs = do
+listWidget :: Frameworks t => EB t [a] -> GUI t p (TkName, Event t (Int,a))
+listWidget (EB evtXs bhvXs) = do
   -- Events
   (pref,cmdEvt) <- addTclEvent
-  xsEvt         <- eventChanges bhvXs
-  let
-    cmd = Cmd pref
-    -- function to transform event
-    getEvents ixE = listEvents xsEvt $ cmdEvt `union` (JumpTo <$> ixE)
-
+  -- Function to transform event
+  let getEvents ixE = listEvents evtXs $ cmdEvt `union` (JumpTo <$> ixE)
   ----------------------------------------
   -- Build UI
   frame [Fill FillX] $
     withPack PackLeft $ do
+      let cmd = Cmd pref
       spacer
       button [Text "<|" ] [] $ cmd  ToBegin
       button [Text "<<<"] [] $ cmd (MoveBack 10)
