@@ -1,8 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module UI.Widget (
     -- * Data type
     Widget
@@ -22,6 +18,7 @@ module UI.Widget (
 
 import Reactive.Banana
 import Reactive.Banana.Frameworks
+import Reactive.Banana.Extra
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -52,10 +49,6 @@ data Widget t s a = Widget
   , wgtInitalState :: s          -- Initial state of widget
   , wgtActimate    :: GUI t s () -- Send data to widget
   }
-
--- | Event and its corresponding behaviour.
-data EB t a = EB (Event t a) (Behavior t a)
-
 
 -- | Run widget.
 finiWidget :: Frameworks t => Widget t s a -> GUI t p (TkName, Event t a, Behavior t s)
@@ -113,27 +106,6 @@ mkWidget nm x0 evt gui
            , wgtInitalState = x0
            , wgtActimate    = gui
            }
-
-----------------------------------------------------------------
--- Instances
-----------------------------------------------------------------
-
-instance Functor (EB t) where
-  fmap f (EB e b) = EB (fmap f e) (fmap f b)
-
-instance Apply (EB t) (EB t) where
-  EB e1 b1 <@> EB e2 b2 =
-    EB (union (b1 <@> e2)
-              (flip ($) <$> b2 <@> e1))
-       (b1 <*> b2)
-
-instance Apply (EB t) (Event t) where
-  EB e b <@> evt =
-    union
-      (b <@> evt)
-      (filterJust $ flip fmap <$> bhv <@> e)
-    where
-      bhv = stepper Nothing (Just <$> evt)
 
 
 
