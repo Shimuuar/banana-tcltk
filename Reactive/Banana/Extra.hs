@@ -10,10 +10,19 @@ import Reactive.Banana.Frameworks
 -- Various scans
 ----------------------------------------------------------------
 
+-- | Zip behavior and event
+zipE :: (a -> b -> c) -> Behavior t a -> Event t b -> Event t c
+zipE f b e = fmap f b <@> e
+
+-- | Join two different events using sum type
+joinE :: Event t a -> Event t b -> Event t (Either a b)
+joinE ea eb = (Left <$> ea) `union` (Right <$> eb)
+
 -- | 'scanl' like accumulation function
 scanE :: (a -> b -> a) -> a -> Event t b -> Event t a
 scanE fold x0 = accumE x0 . fmap (flip fold)
 
+-- | Scan function which can draw events from two separate sources
 scanE2 :: (a -> b -> a)
        -> (a -> c -> a)
        ->  a
@@ -26,54 +35,9 @@ scanE2 fb fc a0 eb ec = scanE go a0 $ joinE ec eb
     go a (Left  c) = fc a c
 
 
-injectModify :: Event t a -> Event t (a -> a) -> Event t a
-injectModify ea ef
-  = filterJust
-  $ scanE acc Nothing
-  $ joinE ea ef
-  where
-    acc _ (Left  a) = Just a
-    acc a (Right f) = fmap f a
-
-addTicks :: Event t a -> Event t b -> Event t a
-addTicks ea eb
-  = filterJust
-  $ scanE2 (const Just) (\x _ -> x) Nothing ea eb
-
 ----------------------------------------------------------------
 -- Zips
 ----------------------------------------------------------------
-
-joinE :: Event t a -> Event t b -> Event t (Either a b)
-joinE ea eb = (Left <$> ea) `union` (Right <$> eb)
-
-zipE :: (a -> b -> c) -> Behavior t a -> Event t b -> Event t c
-zipE f b e = fmap f b <@> e
-
-
-pairWith :: (a -> b -> c) -> Event t a -> Event t b -> Event t c
-pairWith f ea eb
-  = filterJust
-  $ fmap fini
-  $ scanE acc (Nothing,Nothing)
-  $ joinE ea eb
-  where
-    acc (_,b) (Left  a) = (Just a, b)
-    acc (a,_) (Right b) = (a, Just b)
-    fini (a,b) = f <$> a <*> b
-
-pairE :: Event t a -> Event t b -> Event t (a, b)
-pairE = pairWith (,)
-
-
-maybeEvent :: (Event t a -> Event t b) -> Event t (Maybe a) -> Event t (Maybe b)
-maybeEvent f e
-  = unions [ fmap Just $ f $ filterJust e     -- Just case
-           , filterJust $ fmap nothingCase e  -- Nothing case
-           ]
-  where
-    nothingCase Nothing = Just Nothing
-    nothingCase _       = Nothing
 
 
 
