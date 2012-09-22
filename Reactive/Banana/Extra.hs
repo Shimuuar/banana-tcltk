@@ -36,13 +36,13 @@ scanE2 fb fc a0 eb ec = scanE go a0 $ joinE ec eb
     go a (Left  c) = fc a c
 
 
+
 ----------------------------------------------------------------
--- Zips
+-- EB
 ----------------------------------------------------------------
 
 -- | Event and its corresponding behaviour.
 data EB t a = EB (Event t a) (Behavior t a)
-
 
 instance Functor (EB t) where
   fmap f (EB e b) = EB (fmap f e) (fmap f b)

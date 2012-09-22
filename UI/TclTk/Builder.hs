@@ -27,6 +27,8 @@ module UI.TclTk.Builder (
   , addTclEvent
   , initEvent
   , eventChanges
+  , pureEB
+  , eventEB
     -- ** Actimate events
   , actimateTcl
   , actimateTclB
@@ -248,6 +250,18 @@ eventChanges bhv = do
   evt     <- lift $ changes bhv
   return $ (bhv <@ initEvt) `union` evt
 
+
+pureEB :: a -> GUI t p (EB t a)
+pureEB x = do
+  e <- initEvent
+  let bhv = pure x
+  return $ EB (bhv <@ e) bhv
+
+eventEB :: a -> Event t a -> GUI t p (EB t a)
+eventEB x0 evt = do
+  e <- initEvent
+  let bhv = stepper x0 evt
+  return $ EB ((bhv <@ e) `union` evt) bhv
 
 
 -- | Send Tcl commands in responce to event which changes GUI state.
