@@ -80,7 +80,7 @@ listEvents :: Event t [a] -> Event t ListCmd -> Event t (Maybe (Int,a))
 listEvents listEvt command
   = fmap fini
   $ scanE acc Invalid
-  $ fmap Left listEvt `union` fmap Right command
+  $ listEvt `joinE` command
   where
     --
     fini (Cursor _ xs i) = Just (i, xs !! i)
