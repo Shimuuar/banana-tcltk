@@ -3,6 +3,9 @@ module UI.Command (
     Command(..)
   , lex
   , unlex
+    -- * Helpers
+  , encodeRead
+  , decodeRead
   ) where
 
 import Control.Arrow       (first)
