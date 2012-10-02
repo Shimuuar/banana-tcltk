@@ -43,8 +43,9 @@ Library
     UI.TclTk
     UI.TclTk.AST
     UI.TclTk.Basic
-    UI.TclTk.Dialog
     UI.TclTk.Builder
+    UI.TclTk.Dialog
+    UI.TclTk.Menu
     UI.Widget
     UI.Widget.Choice
     UI.Widget.List
