@@ -96,9 +96,6 @@ instance MonadTrans (TclBuilderT x p) where
 instance MonadIO m => MonadIO (TclBuilderT x p m) where
   liftIO = TclBuilderT . liftIO . liftIO . liftIO
 
-instance Frameworks t => MonadIO (Moment t) where
-  liftIO = liftIONow
-
 -- State of builder
 data TclState = TclState
   { counter      :: Int

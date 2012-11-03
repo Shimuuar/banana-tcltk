@@ -107,13 +107,13 @@ registerEvent :: (Command a, Frameworks t)
               -> String         -- ^ Unique event prefix.
               -> Moment t (AddHandler a)
 registerEvent (Dispatch s) pref = do
-  src  <- liftIONow $ readIORef s
-  (register, run) <- liftIONow newAddHandler
+  src  <- liftIO $ readIORef s
+  (register, run) <- liftIO newAddHandler
   let action str =
         case decode str of
           Just x  -> run x
           Nothing -> return ()
-  liftIONow $ writeIORef s $ src { eventDispatch = Map.insert pref action (eventDispatch src) }
+  liftIO $ writeIORef s $ src { eventDispatch = Map.insert pref action (eventDispatch src) }
   return register
 
 
