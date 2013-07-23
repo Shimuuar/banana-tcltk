@@ -68,9 +68,9 @@ import Paths_banana_tcltk
 --       and set using 'addParameter'
 --
 -- [@p@] Parameter type of Tcl AST
-newtype TclBuilderT x p m a
+newtype TclBuilderT t p m a
   = TclBuilderT
-      (ReaderT (TclParam x)
+      (ReaderT (TclParam t)
         (WriterT [Tcl p]
            (StateT TclState m)
          )
@@ -83,7 +83,7 @@ newtype TclBuilderT x p m a
 -- | Type-restricted synonym for 'TclBuilderT' which incorporate event
 --   handling.
 type GUI t p a = TclBuilderT
-                   (Dispatch, Event t ())
+                   t
                    p
                    (Moment t)
                    a
@@ -100,10 +100,11 @@ data TclState = TclState
   }
 
 -- Parameters for reader
-data TclParam x = TclParam
+data TclParam t = TclParam
   { currentPack :: PackSide     -- Current packing order
   , tkPath      :: [String]     -- Path
-  , payload     :: x            -- Custom payload
+  , tclDispatch :: Dispatch
+  , tclInitEvt  :: Event t ()
   }
 
 
@@ -113,8 +114,12 @@ data TclParam x = TclParam
 ----------------------------------------------------------------
 
 -- | Execute tcl builder
-runTclBuilderT :: Monad m => TclBuilderT x p m a -> x -> m (a, [Tcl p])
-runTclBuilderT (TclBuilderT m) x
+runTclBuilderT :: Monad m
+               => TclBuilderT t p m a
+               -> Dispatch
+               -> Event t ()
+               -> m (a, [Tcl p])
+runTclBuilderT (TclBuilderT m) d e
   = flip evalStateT st
   $ runWriterT
   $ runReaderT m param
@@ -125,7 +130,8 @@ runTclBuilderT (TclBuilderT m) x
     param = TclParam
        { currentPack = PackTop
        , tkPath      = []
-       , payload     = x
+       , tclDispatch = d
+       , tclInitEvt  = e
        }
 
 -- | Execute GUI builder. It creates dispatch, event network and Tcl code
@@ -144,9 +150,8 @@ runGUI out gui = do
   -- Build NetworkDescription
   let network :: Frameworks t => Moment t ()
       network = do
-        (_,tcl) <- flip runTclBuilderT () $ do
-          initEvt <- lift $ fromAddHandler register
-          addParameter (dispatch, initEvt) gui
+        initEvt <- fromAddHandler register
+        (_,tcl) <- runTclBuilderT gui dispatch initEvt
         liftIO $ writeIORef tclRef tcl
   -- Compile network
   e   <- compile network
@@ -196,15 +201,6 @@ enterWidget :: Monad m => TkName -> TclBuilderT x p m a -> TclBuilderT x p m a
 enterWidget (TkName name) widget
   = withParam (\c -> c { tkPath = name}) widget
 
--- | Add custom parameter
-addParameter :: Monad m => x -> TclBuilderT x p m a -> TclBuilderT x' p m a
-addParameter p (TclBuilderT widget)
-  = TclBuilderT $ withReaderT (\c -> c { payload = p }) widget
-
--- | Retrieve custom paramter
-getParameter :: Monad m => TclBuilderT x p m x
-getParameter = liftM payload askParam
-
 -- | Get current packing
 askPacking :: Monad m => TclBuilderT x p m PackSide
 askPacking = liftM currentPack askParam
@@ -227,14 +223,14 @@ data Cmd a = Cmd
 addTclEvent :: Frameworks t => Command a => GUI t p (EvtPrefix a, Event t a)
 addTclEvent = do
   pref     <- uniqString "EVT_"
-  (d,_)    <- getParameter
+  d        <- liftM tclDispatch askParam
   register <- lift $ registerEvent d pref
   evt      <- lift $ fromAddHandler register
   return (EvtPrefix pref, evt)
 
 -- | Generated when GUI is attached.
 initEvent :: GUI t p (Event t ())
-initEvent = snd <$> getParameter
+initEvent = liftM tclInitEvt askParam
 
 -- | Changes of behavior. This function is similar to 'changes' but
 --   events are generated not only when behavior changes but also when
@@ -269,7 +265,7 @@ actimateTcl :: Frameworks t
             -> GUI t p ()       -- ^ Tcl commands
             -> GUI t q ()
 actimateTcl evt command = do
-  (d,_) <- getParameter
+  d     <- liftM tclDispatch askParam
   tcl   <- closure command
   initE <- initEvent
   lift $ actimateWith (writeTclParam d tcl)
@@ -282,7 +278,7 @@ actimateTclB :: Frameworks t
              -> GUI t p ()       -- ^ Tcl commands
              -> GUI t q ()
 actimateTclB bhv command = do
-  (d,_) <- getParameter
+  d     <- liftM tclDispatch askParam
   tcl   <- closure command
   evt   <- eventChanges bhv
   lift $ actimateWith (writeTclParam d tcl) evt
