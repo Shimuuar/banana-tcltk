@@ -178,7 +178,7 @@ stmt = tell . (:[])
 freshVar :: Monad m => TclBuilderT x p m String
 freshVar = uniqString "var_"
 
--- | Get fresh name for Tk widget. Returns (name, full name)
+-- | Get fresh name for Tk widget. Returns full name.
 freshTkName :: Monad m => TclBuilderT x p m TkName
 freshTkName = do
   nm   <- freshVar
