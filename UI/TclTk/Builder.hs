@@ -12,8 +12,6 @@ module UI.TclTk.Builder (
     -- * Basic combinators
   , castBuilder
   , stmt
-  , addParameter
-  , getParameter
     -- ** Name generation
   , freshVar
   , freshTkName
