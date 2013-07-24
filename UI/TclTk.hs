@@ -48,7 +48,9 @@ module UI.TclTk (
 
 import Control.Monad      (forM_)
 
-import UI.Command
+import Reactive.Banana
+import Reactive.Banana.Frameworks (Frameworks)
+
 import UI.TclTk.AST
 import UI.TclTk.Builder
 
@@ -111,16 +113,17 @@ label opts packs
 
 
 -- | Tk button which generate event when pressed.
-button :: (Monad m, Command a, GeomManager geom)
-       => [Option p] -> geom -> Cmd a -> TclBuilderT x p m TkName
-button opts packs cmd = do
-  nm <- widget "ttk::button" opts packs []
+button :: (GeomManager geom, Frameworks t)
+       => [Option p] -> geom -> GUI t p (TkName, Event t ())
+button opts packs = do
+  nm       <- widget "ttk::button" opts packs []
+  (pref,e) <- addTclEvent
   stmt $ Stmt [ WName nm
               , Name "configure"
               , Name "-command"
-              , Braces $ commandExpr cmd
+              , Braces $ commandExpr $ Cmd pref ()
               ]
-  return nm
+  return (nm,e)
 
 
 -- | Tk checkbutton
