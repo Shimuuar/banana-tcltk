@@ -21,7 +21,7 @@ module UI.TclTk.Builder (
   , EvtPrefix(getEvtPrefix)
   , Cmd(..)
   , addTclEvent
-  , initEvent
+  , guiAttached
   , eventChanges
     -- ** Actimate events
   , actimateTcl
@@ -225,15 +225,15 @@ addTclEvent = do
   return (EvtPrefix pref, evt)
 
 -- | Generated when GUI is attached.
-initEvent :: GUI t p (Event t ())
-initEvent = tclInitEvt <$> askParam
+guiAttached :: GUI t p (Event t ())
+guiAttached = tclInitEvt <$> askParam
 
 -- | Changes of behavior. This function is similar to 'changes' but
 --   events are generated not only when behavior changes but also when
 --   GUI is attached.
 eventChanges :: Frameworks t => Behavior t a -> GUI t p (Event t a)
 eventChanges bhv = do
-  initEvt <- initEvent
+  initEvt <- guiAttached
   evt     <- lift $ changes bhv
   return $ (bhv <@ initEvt) `union` evt
 
@@ -250,7 +250,7 @@ actimateTcl :: Frameworks t
 actimateTcl evt command = do
   d     <- tclDispatch <$> askParam
   tcl   <- closure command
-  initE <- initEvent
+  initE <- guiAttached
   lift $ actimateWith (writeTclParam d tcl)
        $ filterJust
        $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt

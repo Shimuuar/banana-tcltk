@@ -36,7 +36,7 @@ module UI.TclTk (
   , EvtPrefix(getEvtPrefix)
   , Cmd(..)
   , closure
-  , initEvent
+  , guiAttached
   , addTclEvent
   , actimateTcl
   , actimateTclB
