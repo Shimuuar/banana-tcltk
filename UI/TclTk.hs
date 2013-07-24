@@ -38,8 +38,6 @@ module UI.TclTk (
   , closure
   , initEvent
   , addTclEvent
-  -- , pureEB
-  -- , eventEB
   , actimateTcl
   , actimateTclB
   , actimateIO
