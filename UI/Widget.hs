@@ -3,6 +3,7 @@ module UI.Widget (
   ) where
 
 import Reactive.Banana.Frameworks (Frameworks)
+import Reactive.Banana.Extra
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -36,9 +37,9 @@ entryInt opts packs = do
   bind nm "<Leave>"             $ Braces call
   bind nm "<KeyPress-Return>"   $ Braces call
   bind nm "<KeyPress-KP_Enter>" $ Braces call
-  -- Mirror behavior on the widget
-  let fini bhv = actimateTclB bhv $ do
-                   set vCur  $ LamE LitInt
-                   set vBack $ LamE LitInt
   -- Done
-  return $ Widget nm evt fini
+  return $ Widget nm evt
+         $ \bhv -> do actimateTclB bhv $ do
+                        set vCur  $ LamE LitInt
+                        set vBack $ LamE LitInt
+                      return $ mixEvents evt bhv

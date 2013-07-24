@@ -16,6 +16,7 @@ module UI.TclTk (
     -- ** Active widgets
   , Widget(..)
   , wgt
+  , wgtB
   , button
   , tclCheckbutton
     -- ** Textual widgets
@@ -48,6 +49,7 @@ import Control.Monad      (forM_)
 
 import Reactive.Banana
 import Reactive.Banana.Frameworks (Frameworks)
+import Reactive.Banana.Extra
 
 import UI.TclTk.AST
 import UI.TclTk.Builder
@@ -110,17 +112,24 @@ label opts packs
   = widget "ttk::label" opts packs []
 
 
--- | Widget description
-data Widget t a = Widget { widgetName    :: TkName
-                         , widgetEvent   :: Event t a
-                         , widgetReflect :: forall p. Behavior t a -> GUI t p ()
-                         }
+-- | Information about active widget
+data Widget t a = Widget
+  { widgetName    :: TkName     -- ^ Name of widget
+  , widgetEvent   :: Event t a  -- ^ Events generated from user actions
+  , widgetReflect :: forall p. Bhv t a -> GUI t p (Bhv t a)
+    -- ^ Function to reflect some behavior on widget.
+  }
 
 -- | Reflect behaviour on widget.
-wgt :: Behavior t a -> Widget t a -> GUI t p (TkName, Event t a)
+wgt :: Bhv t a -> Widget t a -> GUI t p (TkName, Event t a)
 wgt bhv w = do
   widgetReflect w bhv
   return (widgetName w, widgetEvent w)
+
+wgtB :: Bhv t a -> Widget t a -> GUI t p (TkName, Bhv t a)
+wgtB bhv w = do
+  b <- widgetReflect w bhv
+  return (widgetName w, b)
 
 
 -- | Tk button which generate event when pressed.
@@ -156,10 +165,8 @@ tclCheckbutton opts packs = do
                                       , Name $ if f then "selected" else "!selected"
                                       ]
                                 ]
-  return Widget { widgetName    = nm
-                , widgetEvent   = e
-                , widgetReflect = \s -> actimateTclB s call
-                }
+  return $ Widget nm e
+         $ \bhv -> actimateTclB bhv call >> return (mixEvents e bhv)
 
 
 

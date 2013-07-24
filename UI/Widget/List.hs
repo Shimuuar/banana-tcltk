@@ -38,7 +38,7 @@ listWidget eList = do
       spacer
       -- OOPS
       let events = listEvents eList (unions [JumpTo <$> eN, e1, e2, e3, e4, e5, e6])
-      finiN $ stepper 0 $ fst <$> events
+      finiN $ Bhv 0 $ fst <$> events
       return events
 
 

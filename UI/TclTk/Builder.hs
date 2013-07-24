@@ -249,22 +249,23 @@ actimateTcl :: Frameworks t
             -> GUI t q ()
 actimateTcl evt command = do
   d     <- tclDispatch <$> askParam
-  tcl   <- closure command
   initE <- guiAttached
+  tcl   <- closure command
   lift $ actimateWith (writeTclParam d tcl)
        $ filterJust
        $ scanE2 (\s _ -> s) (\_ s  -> Just s) Nothing initE evt
 
 -- | Mirror behavior onto GUI. Check note on 'actimateTcl'.
 actimateTclB :: Frameworks t
-             => Behavior t p
+             => Bhv t p
              -> GUI t p ()       -- ^ Tcl commands
              -> GUI t q ()
 actimateTclB bhv command = do
   d     <- tclDispatch <$> askParam
+  initE <- guiAttached
   tcl   <- closure command
-  evt   <- eventChanges bhv
-  lift $ actimateWith (writeTclParam d tcl) evt
+  lift $ actimateWith (writeTclParam d tcl)
+       $ bhv <@ initE
 
 -- | Execute IO action in responce to event. Unlike 'actimateTcl' this
 --   function ignores init events.
