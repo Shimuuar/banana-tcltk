@@ -60,8 +60,7 @@ class Command a where
 
 instance Command () where
   encode _      = ["()"]
-  decode ["()"] = Just ()
-  decode _      = Nothing
+  decode _      = Just ()
 
 instance Command Integer where
   encode = encodeRead
