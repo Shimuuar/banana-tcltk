@@ -1,5 +1,17 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Reactive.Banana.Extra where
+module Reactive.Banana.Extra (
+  -- * Combinators
+    zipE
+  , joinE  
+  , scanE
+  , scanE2
+    -- * Behavior
+  , Bhv(..)
+    -- * Event handlers
+  , actimateWith
+  , actimateWith_
+  , actimateBhvWith
+  ) where
 
 import Control.Applicative
 import Reactive.Banana
@@ -38,28 +50,27 @@ scanE2 fb fc a0 eb ec = scanE go a0 $ joinE ec eb
 
 
 ----------------------------------------------------------------
--- EB
+-- Behavior
 ----------------------------------------------------------------
 
--- | Event and its corresponding behaviour.
-data EB t a = EB (Event t a) (Behavior t a)
+-- | Alternative implementation of behavior. As long as behavior is
+--   discrete it could be modelled as initial value and stream of
+--   updates to that value.
+data Bhv t a = Bhv { initialValue :: a
+                   , toEvent      :: Event t a
+                   }
 
-instance Functor (EB t) where
-  fmap f (EB e b) = EB (fmap f e) (fmap f b)
+instance Functor (Bhv t) where
+  fmap f (Bhv x e) = Bhv (f x) (fmap f e)
 
-instance Apply (EB t) (EB t) where
-  EB e1 b1 <@> EB e2 b2 =
-    EB (union (b1 <@> e2)
-              (flip ($) <$> b2 <@> e1))
-       (b1 <*> b2)
-
-instance Apply (EB t) (Event t) where
-  EB e b <@> evt =
-    union
-      (b <@> evt)
-      (filterJust $ flip fmap <$> bhv <@> e)
+instance Applicative (Bhv t) where
+  pure x = Bhv x never
+  Bhv x f <*> Bhv y g = Bhv (x y) evts
     where
-      bhv = stepper Nothing (Just <$> evt)
+      evts = fmap (uncurry ($))
+           $ scanE go (x,y) (joinE f g)
+      go (_,b) (Left  a) = (a,b)
+      go (a,_) (Right b) = (a,b)
 
 
 
