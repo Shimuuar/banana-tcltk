@@ -14,7 +14,6 @@ module UI.TclTk (
     -- ** Label
   , label
     -- ** Button
-  , tclButton
   , button
     -- ** Checkbutton
   , tclCheckbutton
@@ -111,16 +110,11 @@ label opts packs
   = widget "ttk::label" opts packs []
 
 
--- | Tk button
-tclButton :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
-tclButton opts packs
-  = widget "ttk::button" opts packs []
-
 -- | Tk button which generate event when pressed.
 button :: (Monad m, Command a, GeomManager geom)
        => [Option p] -> geom -> Cmd a -> TclBuilderT x p m TkName
 button opts packs cmd = do
-  nm <- tclButton opts packs
+  nm <- widget "ttk::button" opts packs []
   stmt $ Stmt [ WName nm
               , Name "configure"
               , Name "-command"
