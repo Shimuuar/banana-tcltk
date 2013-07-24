@@ -49,6 +49,7 @@ import Control.Monad      (forM_)
 
 import Reactive.Banana
 import Reactive.Banana.Frameworks (Frameworks)
+import Reactive.Banana.Extra      (EB(..))
 
 import UI.TclTk.AST
 import UI.TclTk.Builder
@@ -126,9 +127,18 @@ button opts packs = do
 
 
 -- | Tk checkbutton
-tclCheckbutton :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
-tclCheckbutton opts packs
-  = widget "ttk::checkbutton" opts packs []
+tclCheckbutton :: (Frameworks t, GeomManager geom)
+                  => [Option p] -> geom -> Bool -> GUI t p (TkName, EB t Bool)
+tclCheckbutton opts packs st = do
+  nm       <- widget "ttk::checkbutton" opts packs []
+  (pref,e) <- addTclEvent
+  -- Set input handler
+  stmt $ Stmt [ Name    "checkbutton_event_toggle"
+              , Name    (getEvtPrefix pref)
+              , WName   nm
+              , LitBool st
+              ]
+  return (nm, EB e (stepper st e))
 
 -- | Entry widget
 tclEntry :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
