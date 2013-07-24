@@ -7,10 +7,10 @@ import UI.TclTk.AST
 import UI.TclTk.Builder
 
 -- | puts
-puts :: Monad m => Expr p -> TclBuilderT x p m ()
+puts :: Expr p -> GUI t p ()
 puts e
   = stmt $ Stmt [Name "puts", e]
 
 -- | Set variable
-set :: Monad m => String -> Expr p -> TclBuilderT x p m ()
+set :: String -> Expr p -> GUI t p ()
 set nm expr = stmt $ Stmt [Name "set", Name nm, expr]

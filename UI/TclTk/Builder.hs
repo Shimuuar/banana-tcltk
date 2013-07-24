@@ -5,8 +5,7 @@
 --   which reexport most frequently used functions and combinators.
 module UI.TclTk.Builder (
     -- * Builder monad
-    TclBuilderT
-  , GUI
+    GUI
   , runGUI
     -- * Basic combinators
   , castBuilder

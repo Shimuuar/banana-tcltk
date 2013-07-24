@@ -32,7 +32,7 @@ newtype Submenu = Submenu TkName
 
 
 -- | Add main menu to the root window
-mainMenu :: Monad m => TclBuilderT x p m Menu
+mainMenu :: GUI t p Menu
 mainMenu = do
   nm <- (TkName . (:[])) `liftM` freshVar
   stmt $ Stmt [ Name "menu"
@@ -47,7 +47,7 @@ mainMenu = do
 
 
 -- | Add menu to the menu bar
-addSubmenu :: Monad m => String -> Menu -> TclBuilderT x p m Submenu
+addSubmenu :: String -> Menu -> GUI t p Submenu
 addSubmenu title (Menu nm) = enterWidget nm $ do
   sub <- freshTkName
   -- Add submenu

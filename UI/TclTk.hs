@@ -2,8 +2,7 @@
 -- | Tck combinators
 module UI.TclTk (
     -- * GUI monad
-    TclBuilderT
-  , GUI
+    GUI
     -- * Geometry manager
   , GeomManager(..)
     -- * Tk widgets
