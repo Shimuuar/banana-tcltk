@@ -169,7 +169,7 @@ castBuilder f (TclBuilderT m)
   = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (contramap f))) m
 
 -- | Add single tcl statemetn
-stmt :: Monad m => Tcl p -> TclBuilderT x p m ()
+stmt :: Tcl p -> GUI t p ()
 stmt = tell . (:[])
 
 -- | Generate fresh variable
