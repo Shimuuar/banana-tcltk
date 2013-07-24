@@ -29,6 +29,7 @@ entryInt opts packs bhvN = do
   vCur        <- freshVar
   vBack       <- freshVar
   (pref, evt) <- addTclEvent
+  configure nm $ TextVariable vCur
   let call = [ Name "entry_validate_int"
              , Name (getEvtPrefix pref)
              , Name vCur
