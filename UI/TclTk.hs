@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE GADTs      #-}
 -- | Tck combinators
 module UI.TclTk (
     -- * GUI monad
@@ -9,16 +10,16 @@ module UI.TclTk (
     -- ** Frame
   , frame
   , frame_
+    -- ** Passive widgets
   , spacer
-    -- ** Label
   , label
-    -- ** Button
+    -- ** Active widgets
+  , Widget(..)
+  , wgt
   , button
-    -- ** Checkbutton
   , tclCheckbutton
-    -- ** Entry widgets
+    -- ** Textual widgets
   , tclEntry
-    -- ** Text widget
   , textarea
   , textReplace
     -- ** Notebook widget
@@ -47,7 +48,6 @@ import Control.Monad      (forM_)
 
 import Reactive.Banana
 import Reactive.Banana.Frameworks (Frameworks)
-import Reactive.Banana.Extra      (EB(..))
 
 import UI.TclTk.AST
 import UI.TclTk.Builder
@@ -110,6 +110,19 @@ label opts packs
   = widget "ttk::label" opts packs []
 
 
+-- | Widget description
+data Widget t a = Widget { widgetName    :: TkName
+                         , widgetEvent   :: Event t a
+                         , widgetReflect :: forall p. Behavior t a -> GUI t p ()
+                         }
+
+-- | Reflect behaviour on widget.
+wgt :: Behavior t a -> Widget t a -> GUI t p (TkName, Event t a)
+wgt bhv w = do
+  widgetReflect w bhv
+  return (widgetName w, widgetEvent w)
+
+
 -- | Tk button which generate event when pressed.
 button :: (GeomManager geom, Frameworks t)
        => [Option p] -> geom -> GUI t p (TkName, Event t ())
@@ -127,9 +140,8 @@ button opts packs = do
 -- | Tk checkbutton
 tclCheckbutton :: (Frameworks t, GeomManager geom)
                   => [Option p] -> geom
-                  -> Behavior t Bool
-                  -> GUI t p (TkName, Event t Bool)
-tclCheckbutton opts packs state = do
+                  -> GUI t p (Widget t Bool)
+tclCheckbutton opts packs = do
   nm       <- widget "ttk::checkbutton" opts packs []
   (pref,e) <- addTclEvent
   -- Set input handler
@@ -144,8 +156,10 @@ tclCheckbutton opts packs state = do
                                       , Name $ if f then "selected" else "!selected"
                                       ]
                                 ]
-  actimateTclB state call
-  return (nm, e)
+  return Widget { widgetName    = nm
+                , widgetEvent   = e
+                , widgetReflect = \s -> actimateTclB s call
+                }
 
 
 

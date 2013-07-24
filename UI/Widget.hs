@@ -2,8 +2,7 @@ module UI.Widget (
     entryInt
   ) where
 
-import Reactive.Banana
-import Reactive.Banana.Frameworks
+import Reactive.Banana.Frameworks (Frameworks)
 
 import UI.TclTk
 import UI.TclTk.AST
@@ -20,9 +19,8 @@ import UI.TclTk.Builder
 entryInt :: (Frameworks t, GeomManager geom)
          => [Option p]          -- ^ Entry options
          -> geom                -- ^ Packing options
-         -> Behavior t Int      -- ^ Initial state
-         -> GUI t p (TkName,Event t Int)
-entryInt opts packs bhvN = do
+         -> GUI t p (Widget t Int)
+entryInt opts packs = do
   -- Widget
   nm <- tclEntry opts packs
   -- Set event handler for user input
@@ -39,8 +37,8 @@ entryInt opts packs bhvN = do
   bind nm "<KeyPress-Return>"   $ Braces call
   bind nm "<KeyPress-KP_Enter>" $ Braces call
   -- Mirror behavior on the widget
-  actimateTclB bhvN $ do set vCur  $ LamE LitInt
-                         set vBack $ LamE LitInt
+  let fini bhv = actimateTclB bhv $ do
+                   set vCur  $ LamE LitInt
+                   set vBack $ LamE LitInt
   -- Done
-  return (nm,evt)
-
+  return $ Widget nm evt fini
