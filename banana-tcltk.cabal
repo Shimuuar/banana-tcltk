@@ -46,7 +46,7 @@ Library
     UI.TclTk.Builder
     UI.TclTk.Dialog
     UI.TclTk.Menu
---    UI.Widget
+    UI.Widget
     UI.Widget.Choice
 --    UI.Widget.List
     Reactive.Banana.Extra
