@@ -7,7 +7,6 @@ module UI.TclTk.Builder (
     -- * Builder monad
     TclBuilderT
   , GUI
-  , runTclBuilderT
   , runGUI
     -- * Basic combinators
   , castBuilder
