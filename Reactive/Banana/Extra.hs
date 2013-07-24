@@ -7,6 +7,7 @@ module Reactive.Banana.Extra (
   , scanE2
     -- * Behavior
   , Bhv(..)
+  , mixEvents
     -- * Event handlers
   , actimateWith
   , actimateWith_
@@ -60,17 +61,30 @@ data Bhv t a = Bhv { initialValue :: a
                    , toEvent      :: Event t a
                    }
 
+mixEvents :: Event t a -> Bhv t a -> Bhv t a
+mixEvents e' (Bhv x0 e) = Bhv x0 (union e e')
+
 instance Functor (Bhv t) where
   fmap f (Bhv x e) = Bhv (f x) (fmap f e)
 
 instance Applicative (Bhv t) where
   pure x = Bhv x never
-  Bhv x f <*> Bhv y g = Bhv (x y) evts
-    where
-      evts = fmap (uncurry ($))
-           $ scanE go (x,y) (joinE f g)
-      go (_,b) (Left  a) = (a,b)
-      go (a,_) (Right b) = (a,b)
+  (<*>) = zipBehavior ($)
+
+instance Apply (Bhv t) (Event t) where
+  bhv <@> e = filterJust
+            $ toEvent
+            $ zipBehavior fmap bhv (Bhv Nothing $ fmap Just e)
+
+
+zipBehavior :: (a -> b -> c) -> Bhv t a -> Bhv t b -> Bhv t c
+zipBehavior f (Bhv a0 evtA) (Bhv b0 evtB)
+  = Bhv (f a0 b0) evts
+  where
+    evts = fmap (uncurry f)
+         $ scanE go (a0,b0) (joinE evtA evtB)
+    go (_,b) (Left  a) = (a,b)
+    go (a,_) (Right b) = (a,b)
 
 
 
