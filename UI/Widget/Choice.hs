@@ -13,11 +13,16 @@ import UI.TclTk.AST
 import UI.TclTk.Builder
 
 
-
-choiceWidget :: Frameworks t
-             => [(String, Event t a -> GUI t p TkName)] -- List of choices
-             -> Event t a
-             -> GUI t p ()
+-- | Tabbed widget
+choiceWidget
+  :: Frameworks t
+  => [(String, Event t a -> GUI t p TkName)]
+  -- ^ List of pairs. Tab name and tab content parameterized by
+  -- event. Event is passed to the tab content when tab is
+  -- switched. When new event arrives it's sent to active tab.
+  -> Event t a
+  -- ^ Initial event
+  -> GUI t p ()
 choiceWidget [] _ = return ()
 choiceWidget xs evt = do
   (pref,idxEvt) <- addTclEvent
