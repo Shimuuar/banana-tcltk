@@ -85,7 +85,7 @@ instance GeomManager Grid where
 frame :: (Monad m, GeomManager geom) => geom -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
 frame packs content = do
   nm <- widget "ttk::frame"
-          [ Padding 10 ]
+          [ Padding 5 ]
           packs
           []
   x <- enterWidget nm content
