@@ -126,17 +126,28 @@ button opts packs = do
 
 -- | Tk checkbutton
 tclCheckbutton :: (Frameworks t, GeomManager geom)
-                  => [Option p] -> geom -> Bool -> GUI t p (TkName, EB t Bool)
-tclCheckbutton opts packs st = do
+                  => [Option p] -> geom
+                  -> Behavior t Bool
+                  -> GUI t p (TkName, Event t Bool)
+tclCheckbutton opts packs state = do
   nm       <- widget "ttk::checkbutton" opts packs []
   (pref,e) <- addTclEvent
   -- Set input handler
   stmt $ Stmt [ Name    "checkbutton_event_toggle"
               , Name    (getEvtPrefix pref)
               , WName   nm
-              , LitBool st
+              , LitBool False -- FIXME
               ]
-  return (nm, EB e (stepper st e))
+  -- Set callback
+  let call = stmt $ Lam $ \f -> [Stmt [ WName nm
+                                      , Name "state"
+                                      , Name $ if f then "selected" else "!selected"
+                                      ]
+                                ]
+  actimateTclB state call
+  return (nm, e)
+
+
 
 -- | Entry widget
 tclEntry :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
