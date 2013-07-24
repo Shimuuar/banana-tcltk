@@ -219,14 +219,14 @@ data Cmd a = Cmd
 addTclEvent :: Frameworks t => Command a => GUI t p (EvtPrefix a, Event t a)
 addTclEvent = do
   pref     <- uniqString "EVT_"
-  d        <- liftM tclDispatch askParam
+  d        <- tclDispatch <$> askParam
   register <- lift $ registerEvent d pref
   evt      <- lift $ fromAddHandler register
   return (EvtPrefix pref, evt)
 
 -- | Generated when GUI is attached.
 initEvent :: GUI t p (Event t ())
-initEvent = liftM tclInitEvt askParam
+initEvent = tclInitEvt <$> askParam
 
 -- | Changes of behavior. This function is similar to 'changes' but
 --   events are generated not only when behavior changes but also when
@@ -248,7 +248,7 @@ actimateTcl :: Frameworks t
             -> GUI t p ()       -- ^ Tcl commands
             -> GUI t q ()
 actimateTcl evt command = do
-  d     <- liftM tclDispatch askParam
+  d     <- tclDispatch <$> askParam
   tcl   <- closure command
   initE <- initEvent
   lift $ actimateWith (writeTclParam d tcl)
@@ -261,7 +261,7 @@ actimateTclB :: Frameworks t
              -> GUI t p ()       -- ^ Tcl commands
              -> GUI t q ()
 actimateTclB bhv command = do
-  d     <- liftM tclDispatch askParam
+  d     <- tclDispatch <$> askParam
   tcl   <- closure command
   evt   <- eventChanges bhv
   lift $ actimateWith (writeTclParam d tcl) evt
