@@ -164,7 +164,7 @@ runGUI out gui = do
 ----------------------------------------------------------------
 
 -- | Change parameter type of Tcl AST.
-castBuilder :: Monad m => (q -> p) -> TclBuilderT x p m a -> TclBuilderT x q m a
+castBuilder :: (q -> p) -> GUI t p a -> GUI t q a
 castBuilder f (TclBuilderT m)
   = TclBuilderT $ mapReaderT (mapWriterT (liftM $ id *** map (contramap f))) m
 
@@ -173,11 +173,11 @@ stmt :: Tcl p -> GUI t p ()
 stmt = tell . (:[])
 
 -- | Generate fresh variable
-freshVar :: Monad m => TclBuilderT x p m String
+freshVar :: GUI t p String
 freshVar = uniqString "var_"
 
 -- | Get fresh name for Tk widget. Returns full name.
-freshTkName :: Monad m => TclBuilderT x p m TkName
+freshTkName :: GUI t p TkName
 freshTkName = do
   nm   <- freshVar
   path <- liftM tkPath askParam
@@ -190,17 +190,17 @@ freshTkName = do
 ----------------------------------------------------------------
 
 -- | Set current packing
-withPack :: Monad m => PackSide -> TclBuilderT x p m a -> TclBuilderT x p m a
+withPack :: PackSide -> GUI t p a -> GUI t p a
 withPack p widget
   = withParam (\c -> c { currentPack = p }) widget
 
 -- | Generate new Tk names for childs of given widget
-enterWidget :: Monad m => TkName -> TclBuilderT x p m a -> TclBuilderT x p m a
+enterWidget :: TkName -> GUI t p a -> GUI t p a
 enterWidget (TkName name) widget
   = withParam (\c -> c { tkPath = name}) widget
 
 -- | Get current packing
-askPacking :: Monad m => TclBuilderT x p m PackSide
+askPacking :: GUI t p PackSide
 askPacking = liftM currentPack askParam
 
 
@@ -292,7 +292,7 @@ actimateIO evt action =
 
 
 -- | Generate parametrized Tcl code.
-closure :: Monad m => TclBuilderT x p m () -> TclBuilderT x q m [Tcl p]
+closure :: GUI t p () -> GUI t q [Tcl p]
 closure (TclBuilderT m) =
   TclBuilderT $ do
     -- FIXME: should path be resetted???
@@ -314,15 +314,15 @@ commandExpr (Cmd (EvtPrefix pref) action) =
 ----------------------------------------------------------------
 
 -- Get state
-getSt :: Monad m => TclBuilderT x p m TclState
+getSt :: GUI t p TclState
 getSt = TclBuilderT $ lift get
 
 -- Put staye
-putSt :: Monad m => TclState -> TclBuilderT x p m ()
+putSt :: TclState -> GUI t p ()
 putSt = TclBuilderT . lift . put
 
 -- Generate unique string with given prefix
-uniqString :: Monad m => String -> TclBuilderT x p m String
+uniqString :: String -> GUI t p String
 uniqString pref = do
   s <- getSt
   let n = counter s
@@ -330,10 +330,10 @@ uniqString pref = do
   return $ pref ++ show n
 
 -- Get parameter
-askParam :: Monad m => TclBuilderT x p m (TclParam x)
+askParam :: GUI t p (TclParam t)
 askParam = TclBuilderT $ ask
 
 -- withReader for TclBuilderT
-withParam :: Monad m => (TclParam x -> TclParam y) -> TclBuilderT y p m a -> TclBuilderT x p m a
+withParam :: (TclParam t -> TclParam t) -> GUI t p a -> GUI t p a
 withParam f (TclBuilderT widget)
   = TclBuilderT $ withReaderT f widget
