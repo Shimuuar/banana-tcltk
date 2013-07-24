@@ -62,7 +62,7 @@ import UI.TclTk.Builder
 -- | Geometry managers. Tcl\/Tk provide two geometry managers: pack and grid.
 --   This type class allow to choose between them.
 class GeomManager geom where
-  placeWidget :: Monad m => TkName -> geom -> TclBuilderT x p m ()
+  placeWidget :: TkName -> geom -> GUI t p ()
 
 instance a ~ Pack => GeomManager [a] where
   placeWidget = pack
@@ -82,7 +82,7 @@ instance GeomManager Grid where
 ----------------------------------------------------------------
 
 -- | Tk frame widget used as container.
-frame :: (Monad m, GeomManager geom) => geom -> TclBuilderT x p m a -> TclBuilderT x p m (TkName,a)
+frame :: (GeomManager geom) => geom -> GUI t p a -> GUI t p (TkName,a)
 frame packs content = do
   nm <- widget "ttk::frame"
           [ Padding 5 ]
@@ -92,7 +92,7 @@ frame packs content = do
   return (nm,x)
 
 -- | Tk frame which returns only name of frame.
-frame_ :: (Monad m, GeomManager geom) => geom -> TclBuilderT x p m a -> TclBuilderT x p m TkName
+frame_ :: (GeomManager geom) => geom -> GUI t p a -> GUI t p TkName
 frame_ packs content = do
   (nm, _) <- frame packs content
   return nm
@@ -100,14 +100,14 @@ frame_ packs content = do
 -- | Empty frame which takes all available space.
 --
 --   FIXME: How does it interact with grid ???
-spacer :: Monad m => TclBuilderT x p m TkName
+spacer :: GUI t p TkName
 spacer = frame_ [Expand True, Fill FillBoth]
        $ return ()
 
 
 
 -- | Tk label.
-label :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
+label :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
 label opts packs
   = widget "ttk::label" opts packs []
 
@@ -127,24 +127,24 @@ button opts packs = do
 
 
 -- | Tk checkbutton
-tclCheckbutton :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
+tclCheckbutton :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
 tclCheckbutton opts packs
   = widget "ttk::checkbutton" opts packs []
 
 -- | Entry widget
-tclEntry :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
+tclEntry :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
 tclEntry opts packs
   = widget "ttk::entry" opts packs []
 
 
 
 -- | Tk text area
-textarea :: (Monad m, GeomManager geom) => [Option p] -> geom -> TclBuilderT x p m TkName
+textarea :: (GeomManager geom) => [Option p] -> geom -> GUI t p TkName
 textarea opts packs
   = widget "tk::text" opts packs []
 
 -- | Replace text in the text area
-textReplace :: (Monad m) => TkName -> Expr p -> TclBuilderT x p m ()
+textReplace :: TkName -> Expr p -> GUI t p ()
 textReplace nm str
   = stmt $ Stmt [ WName nm
                     , Name "replace" , Name "0.0" , Name "end" , str
@@ -152,12 +152,12 @@ textReplace nm str
 
 
 -- | Notebook widget.
-notebook :: (Monad m, GeomManager geom)
+notebook :: (GeomManager geom)
          => [Option p]          -- ^ Widget options
          -> geom                -- ^ Geometry specifications
-         -> [(String, TclBuilderT x p m TkName)]
+         -> [(String, GUI t p TkName)]
          -- ^ Function to generate list of widgets to insert
-         -> TclBuilderT x p m TkName
+         -> GUI t p TkName
 notebook opts packs widgets = do
   note <- widget "ttk::notebook" opts packs []
   enterWidget note $
@@ -176,7 +176,7 @@ notebook opts packs widgets = do
 
 -- | Pack widget using current packing if it's not provided
 --   explicitly.
-pack :: Monad m => TkName -> [Pack] -> TclBuilderT x p m ()
+pack :: TkName -> [Pack] -> GUI t p ()
 pack nm packs = do
   opts <- case [() | Side _ <- packs ] of
              [] -> do c <- askPacking
@@ -187,15 +187,14 @@ pack nm packs = do
                 ] ++ (renderPack =<< opts)
 
 -- | Set option for widget
-configure :: Monad m => TkName -> Option p -> TclBuilderT x p m ()
+configure :: TkName -> Option p -> GUI t p ()
 configure nm opt
   = stmt $ Stmt $ WName nm : Name "configure" : renderOption opt
 
 -- | Disable widget
-disable :: Monad m
-        => TkName               -- ^ Widget name
+disable :: TkName               -- ^ Widget name
         -> Bool                 -- ^ @True@ - disable, @False@ - enable
-        -> TclBuilderT x p m ()
+        -> GUI t p ()
 disable nm flag
   = stmt $ Stmt [ WName nm
                 , Name "state"
@@ -203,11 +202,10 @@ disable nm flag
                 ]
 
 -- | Bind expressio to event.
-bind :: Monad m
-     => TkName                  -- ^ Widget name
+bind :: TkName                  -- ^ Widget name
      -> String                  -- ^ Tcl/Tk event name
      -> Expr p                  -- ^ Callback to execute
-     -> TclBuilderT x p m ()
+     -> GUI t p ()
 bind nm evt expr
   = stmt $ Stmt [ Name  "bind"
                 , WName nm
@@ -222,12 +220,12 @@ bind nm evt expr
 ----------------------------------------------------------------
 
 -- | Generic function for creating Tk widget.
-widget :: (Monad m, GeomManager geom)
+widget :: (GeomManager geom)
        => String                -- ^ Widget constructor
        -> [Option p]            -- ^ Options
        -> geom                  -- ^ Packing options
        -> [Expr p]              -- ^ Arbitrary expressions
-       -> TclBuilderT x p m TkName
+       -> GUI t p TkName
 widget wdgt opts packs exprs = do
   nm <- freshTkName
   stmt
